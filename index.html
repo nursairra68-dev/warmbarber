@@ -304,7 +304,8 @@
     logout:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3"/><path d="M15 16l4-4-4-4M19 12H9"/></svg>',
     plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>',
     qr:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1.2"/><rect x="14" y="3.5" width="6.5" height="6.5" rx="1.2"/><rect x="3.5" y="14" width="6.5" height="6.5" rx="1.2"/><path d="M14 14h3v3h-3zM20.5 14v3M14 20.5h3M20.5 20.5h.01"/></svg>',
-    copy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8.5" y="8.5" width="11" height="11" rx="2.2"/><path d="M15 8.5V6.2A1.7 1.7 0 0 0 13.3 4.5H6.2A1.7 1.7 0 0 0 4.5 6.2v7.1A1.7 1.7 0 0 0 6.2 15H8.5"/></svg>'
+    copy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8.5" y="8.5" width="11" height="11" rx="2.2"/><path d="M15 8.5V6.2A1.7 1.7 0 0 0 13.3 4.5H6.2A1.7 1.7 0 0 0 4.5 6.2v7.1A1.7 1.7 0 0 0 6.2 15H8.5"/></svg>',
+    lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>'
   };
 
   var SHOP = {
@@ -314,6 +315,8 @@
     hours:"Isnin–Sabtu, 10 pagi–9 malam",
     phone:"+60 13-625 8782"
   };
+  var MAPS_URL = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(SHOP.address);
+  function openMap(){ window.open(MAPS_URL, '_blank'); }
 
   var SERVICES = [
     {id:'classic', name:'Gunting Klasik', desc:'Gunting kemas, trim kemaskini + cuci rambut', price:35, mins:30},
@@ -378,7 +381,8 @@
     tab:'home', prevTab:'home', step:1,
     selectedServices:{}, selectedBarber:null, selectedDateIdx:0, selectedTime:null,
     name:'', phone:'', bookings:[], justBooked:null, unread:false, dbOk:false,
-    customer:null, regName:'', regPhone:'', busyTimes:{}, submitting:false
+    customer:null, regName:'', regPhone:'', busyTimes:{}, submitting:false,
+    shopOpen:true, shopNote:'', ownerPin:'', ownerNote:'', ownerBusy:false
   };
 
   var supa = null;
@@ -451,6 +455,55 @@
     });
   }
 
+  function applyShopRow(row){
+    if(!row) return;
+    state.shopOpen = row.is_open!==false;
+    state.shopNote = row.note || '';
+  }
+
+  function loadShopStatus(){
+    if(!supa) return;
+    supa.from('shop_status').select('*').eq('id',1).single().then(function(res){
+      if(res.error){ console.warn(res.error); return; }
+      applyShopRow(res.data);
+      render();
+    });
+  }
+
+  function subscribeShopStatus(){
+    if(!supa) return;
+    supa.channel('shop-status-live')
+      .on('postgres_changes', {event:'UPDATE', schema:'public', table:'shop_status'}, function(payload){
+        applyShopRow(payload.new);
+        render();
+      })
+      .subscribe();
+  }
+
+  function subscribeSlotUpdates(){
+    if(!supa) return;
+    supa.channel('slot-updates')
+      .on('broadcast', {event:'booked'}, function(msg){
+        var p = msg.payload || {};
+        if(!p.barberName || !p.dateFull || !p.time) return;
+        var key = p.barberName+'|'+p.dateFull;
+        var cached = state.busyTimes[key];
+        if(cached && cached!=='loading'){ cached[p.time] = true; }
+        if(state.tab==='booking' && state.step===3) render();
+      })
+      .subscribe();
+  }
+
+  function broadcastSlotBooked(booking){
+    if(!supa) return;
+    try{
+      supa.channel('slot-updates').send({
+        type:'broadcast', event:'booked',
+        payload:{ barberName:booking.barberName, dateFull:booking.dateFull, time:booking.time }
+      });
+    }catch(e){}
+  }
+
   /* ---------------- Render: header ---------------- */
   function renderTopbar(){
     var el=document.getElementById('topbar');
@@ -475,6 +528,10 @@
       el.innerHTML = '<button class="back" id="btnShareBack">'+ICON.chevLeft+'</button><div class="title-wrap"><span class="eyebrow">Mudahkan Pelanggan</span><h1>Kongsi App</h1></div>';
       return;
     }
+    if(state.tab==='owner'){
+      el.innerHTML = '<button class="back" id="btnOwnerBack">'+ICON.chevLeft+'</button><div class="title-wrap"><span class="eyebrow">Khas Pemilik</span><h1>Pengurusan Kedai</h1></div>';
+      return;
+    }
   }
 
   function renderTabbar(){
@@ -489,9 +546,12 @@
 
   function screenHome(){
     var html = '<div class="screen">';
-    html += '<div class="hero"><div class="hero-inner"><span class="hero-tag">'+ICON.spark+' Barbershop Mesra</span><h2>'+SHOP.tagline+'</h2><p class="sub">Tempah janji temu dalam masa kurang seminit. Pilih khidmat, barber kegemaran, dan masa yang sesuai untuk anda.</p><button class="btn btn-primary" id="heroBook">'+ICON.calendar+' Tempah Janji Temu</button><div class="hero-stats"><div class="hero-stat"><b>4.9</b><span>Penilaian</span></div><div class="hero-stat"><b>'+(3000+state.bookings.length)+'+</b><span>Tempahan</span></div><div class="hero-stat"><b>3</b><span>Barber Pakar</span></div></div></div></div>';
+    if(!state.shopOpen){
+      html += '<div style="background:var(--live-soft);border:1px solid var(--live);border-radius:14px;padding:13px 14px;display:flex;align-items:center;gap:10px;">'+ICON.bell+'<div><strong style="display:block;font-size:13.5px;color:var(--fg);">Kedai sedang tutup sementara</strong>'+(state.shopNote?'<span style="font-size:12.5px;color:var(--muted);">'+escapeHtml(state.shopNote)+'</span>':'')+'</div></div>';
+    }
+    html += '<div class="hero"><div class="hero-inner"><span class="hero-tag">'+ICON.spark+' Barbershop Mesra</span><h2>'+SHOP.tagline+'</h2><p class="sub">Tempah janji temu dalam masa kurang seminit. Pilih khidmat, barber kegemaran, dan masa yang sesuai untuk anda.</p><button class="btn btn-primary" id="heroBook" '+(!state.shopOpen?'disabled':'')+'>'+ICON.calendar+' Tempah Janji Temu</button><div class="hero-stats"><div class="hero-stat"><b>4.9</b><span>Penilaian</span></div><div class="hero-stat"><b>'+(3000+state.bookings.length)+'+</b><span>Tempahan</span></div><div class="hero-stat"><b>3</b><span>Barber Pakar</span></div></div></div></div>';
     html += '<button class="live-card" id="liveCard"><div class="live-stage">'+LIVE_SVG+'<span class="live-badge"><i></i>LANGSUNG</span></div><div class="live-text"><span class="live-label">Di Kedai Sekarang</span><strong>Amir Hakim sedang menggunting</strong><span>Fade & taper · Kerusi 2</span></div></button>';
-    html += '<div style="display:flex;flex-direction:column;gap:11px;"><div class="info-row"><div class="ic">'+ICON.pin+'</div><div class="tx"><strong>Lokasi</strong><span>'+SHOP.address+'</span></div></div><div class="info-row"><div class="ic">'+ICON.clock+'</div><div class="tx"><strong>Waktu Operasi</strong><span>'+SHOP.hours+' · Ahad tutup</span></div></div><div class="info-row"><div class="ic">'+ICON.phone+'</div><div class="tx"><strong>Hubungi Kami</strong><span>'+SHOP.phone+'</span></div></div></div>';
+    html += '<div style="display:flex;flex-direction:column;gap:11px;"><button class="info-row" data-maps="1" style="background:none;border:none;text-align:left;cursor:pointer;padding:0;width:100%;"><div class="ic">'+ICON.pin+'</div><div class="tx"><strong>Lokasi</strong><span>'+SHOP.address+' · Tekan untuk buka peta</span></div></button><div class="info-row"><div class="ic">'+ICON.clock+'</div><div class="tx"><strong>Waktu Operasi</strong><span>'+SHOP.hours+' · Ahad tutup</span></div></div><div class="info-row"><div class="ic">'+ICON.phone+'</div><div class="tx"><strong>Hubungi Kami</strong><span>'+SHOP.phone+'</span></div></div></div>';
     html += '<div><div class="section-head"><h3>Khidmat Popular</h3><button class="link" id="seeAllSvc">Lihat Semua</button></div><div class="quickgrid" style="margin-top:10px;">' +
       SERVICES.slice(0,3).map(function(s){ return '<div class="quickcard" data-svcquick="'+s.id+'"><div class="ic">'+ICON.scissors+'</div><span>'+s.name+'</span><span class="pricepill" style="margin-top:-2px;">'+money(s.price)+'</span></div>'; }).join('') +
       '</div></div>';
@@ -612,7 +672,7 @@
     var custPhone = state.customer ? state.customer.phone : '';
     var avatarInitials = state.customer ? initials(state.customer.name) : 'GT';
     var html = '<div class="screen"><div class="profile-card"><div class="profile-avatar">'+avatarInitials+'</div><div><strong>'+custName+'</strong><span>'+custPhone+'</span></div></div>';
-    html += '<div class="menu-list">' + menuItem('share',ICON.qr,'Kongsi App (Kod QR)') + menuItem('menu',ICON.history,'Sejarah Tempahan') + menuItem('menu',ICON.card,'Kaedah Pembayaran') + menuItem('menu',ICON.bell,'Notifikasi') + menuItem('menu',ICON.help,'Bantuan & Sokongan') + '</div>';
+    html += '<div class="menu-list">' + menuItem('share',ICON.qr,'Kongsi App (Kod QR)') + menuItem('menu',ICON.history,'Sejarah Tempahan') + menuItem('menu',ICON.card,'Kaedah Pembayaran') + menuItem('menu',ICON.bell,'Notifikasi') + menuItem('menu',ICON.help,'Bantuan & Sokongan') + menuItem('owner',ICON.lock,'Pengurusan Kedai (Pemilik)') + '</div>';
     html += '<button class="btn btn-ghost btn-block" id="btnLogout">'+ICON.logout+' Log Keluar</button></div>';
     return html;
   }
@@ -622,7 +682,27 @@
     var html = '<div class="screen"><div class="qr-card"><div class="qr-box" id="qrBox"></div><div class="qr-caption"><strong>Imbas untuk buka '+SHOP.name+'</strong><span>Letak kod ini di kaunter supaya pelanggan boleh tempah terus dari telefon mereka</span></div></div>';
     html += '<div class="link-row"><span id="shareUrlText">memuatkan pautan…</span><button class="copybtn" id="btnCopyLink">'+ICON.copy+'</button></div>';
     html += '<div class="note-box">Pautan ini pautan sebenar website Warm Barber — sesiapa yang imbas boleh terus buka dan buat tempahan.</div>';
-    html += '<div style="display:flex;flex-direction:column;gap:11px;"><div class="info-row"><div class="ic">'+ICON.pin+'</div><div class="tx"><strong>'+SHOP.name+'</strong><span>'+SHOP.address+'</span></div></div><div class="info-row"><div class="ic">'+ICON.phone+'</div><div class="tx"><strong>Hubungi</strong><span>'+SHOP.phone+'</span></div></div></div></div>';
+    html += '<div style="display:flex;flex-direction:column;gap:11px;"><button class="info-row" data-maps="1" style="background:none;border:none;text-align:left;cursor:pointer;padding:0;width:100%;"><div class="ic">'+ICON.pin+'</div><div class="tx"><strong>'+SHOP.name+'</strong><span>'+SHOP.address+' · Tekan untuk buka peta</span></div></button><div class="info-row"><div class="ic">'+ICON.phone+'</div><div class="tx"><strong>Hubungi</strong><span>'+SHOP.phone+'</span></div></div></div></div>';
+    return html;
+  }
+
+  function screenOwner(){
+    var statusHtml = state.shopOpen
+      ? '<span class="badge-ok">Kedai Dibuka</span>'
+      : '<span style="font-size:10.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--live);background:var(--live-soft);border-radius:7px;padding:3px 8px;">Kedai Ditutup</span>';
+    var html = '<div class="screen">';
+    html += '<div class="summary-card" style="align-items:flex-start;"><div class="summary-row"><span class="k">Status Sekarang</span><span class="v">'+statusHtml+'</span></div>'+(state.shopNote?'<div class="summary-row"><span class="k">Nota</span><span class="v">'+escapeHtml(state.shopNote)+'</span></div>':'')+'</div>';
+    html += '<div style="display:flex;flex-direction:column;gap:14px;">';
+    html += '<div class="field"><label for="ownerPin">PIN Pemilik</label><input id="ownerPin" type="password" inputmode="numeric" placeholder="Masukkan PIN" value="'+escapeHtml(state.ownerPin||'')+'"></div>';
+    html += '<div class="field"><label for="ownerNote">Nota untuk pelanggan (pilihan)</label><input id="ownerNote" type="text" placeholder="cth. Cuti Hari Raya, buka semula esok" value="'+escapeHtml(state.ownerNote||'')+'"></div>';
+    html += '</div>';
+    if(state.shopOpen){
+      html += '<button class="btn btn-block" id="btnShopClose" style="background:var(--live);color:#fff;" '+(state.ownerBusy?'disabled':'')+'>'+ICON.lock+' Tutup Kedai (Rehat/Off)</button>';
+    } else {
+      html += '<button class="btn btn-primary btn-block" id="btnShopOpen" '+(state.ownerBusy?'disabled':'')+'>'+ICON.check+' Buka Kedai Semula</button>';
+    }
+    html += '<p style="font-size:11px;color:var(--muted-2);text-align:center;line-height:1.5;">Bila kedai ditutup, pelanggan tak boleh buat tempahan baru dan akan nampak nota di atas pada skrin utama mereka.</p>';
+    html += '</div>';
     return html;
   }
 
@@ -683,6 +763,7 @@
     else if(state.tab==='appointments') main.innerHTML = screenAppointments();
     else if(state.tab==='profile') main.innerHTML = screenProfile();
     else if(state.tab==='share') main.innerHTML = screenShare();
+    else if(state.tab==='owner') main.innerHTML = screenOwner();
     main.scrollTop = 0;
     renderDock(); bindScreenEvents();
     if(state.tab==='share') renderQr();
@@ -695,11 +776,35 @@
     render();
   }
   function goShare(){ state.prevTab = state.tab; state.tab='share'; render(); }
-  function startBooking(){ state.tab='booking'; state.step=1; state.justBooked=null; render(); }
+  function goOwner(){ state.prevTab = state.tab; state.tab='owner'; state.ownerNote = state.shopNote||''; render(); }
+
+  function submitShopStatus(nextOpen){
+    if(!supa){ toast('Tidak tersambung ke pangkalan data'); return; }
+    if(state.ownerBusy) return;
+    var pin = (state.ownerPin||'').trim();
+    if(!pin){ toast('Sila masukkan PIN pemilik'); return; }
+    state.ownerBusy = true; render();
+    var note = nextOpen ? null : (state.ownerNote||'').trim();
+    supa.rpc('set_shop_status', { p_is_open: nextOpen, p_note: note, p_pin: pin }).then(function(res){
+      state.ownerBusy = false;
+      if(res.error){ toast('Gagal kemaskini status'); console.warn(res.error); render(); return; }
+      if(res.data === false){ toast('PIN salah'); render(); return; }
+      state.shopOpen = nextOpen;
+      state.shopNote = note || '';
+      state.ownerPin = '';
+      toast(nextOpen ? 'Kedai dibuka semula' : 'Kedai ditutup sementara');
+      render();
+    });
+  }
+  function startBooking(){
+    if(!state.shopOpen){ toast('Kedai sedang tutup sementara — sila cuba lagi kemudian'); return; }
+    state.tab='booking'; state.step=1; state.justBooked=null; render();
+  }
 
   function nextStep(){
     if(state.step<4){ state.step++; render(); return; }
     if(state.submitting) return;
+    if(!state.shopOpen){ toast('Kedai sedang tutup sementara — sila cuba lagi kemudian'); return; }
     var svcs = selectedServiceList(); var barber = barberById(state.selectedBarber); var date = DATES[state.selectedDateIdx];
     var ref = 'WB-' + Math.floor(1000+Math.random()*9000);
     var booking = { ref:ref, services: svcs.map(function(s){return s.name;}), mins: totalMins(), barberName: barber.name, dateFull: fmtDateFull(date), time: state.selectedTime, total: totalPrice(), customerName: state.name, customerPhone: state.phone };
@@ -738,6 +843,7 @@
       state.bookings.unshift(booking);
       state.justBooked = booking;
       notifyNtfy(booking);
+      broadcastSlotBooked(booking);
       toast('Tempahan berjaya disahkan');
       render();
       loadBookings();
@@ -768,7 +874,8 @@
     var phoneInput=document.getElementById('custPhone'); if(phoneInput) phoneInput.addEventListener('input', function(){ state.phone=phoneInput.value; renderDock(); });
 
     var btnNewBooking=document.getElementById('btnNewBooking'); if(btnNewBooking) btnNewBooking.addEventListener('click', resetBooking);
-    main.querySelectorAll('[data-menu]').forEach(function(el){ el.addEventListener('click', function(){ if(el.dataset.menu==='share'){ goShare(); return; } toast('Ciri "'+el.dataset.label+'" akan datang'); }); });
+    main.querySelectorAll('[data-menu]').forEach(function(el){ el.addEventListener('click', function(){ if(el.dataset.menu==='share'){ goShare(); return; } if(el.dataset.menu==='owner'){ goOwner(); return; } toast('Ciri "'+el.dataset.label+'" akan datang'); }); });
+    main.querySelectorAll('[data-maps]').forEach(function(el){ el.addEventListener('click', openMap); });
     var btnLogout=document.getElementById('btnLogout'); if(btnLogout) btnLogout.addEventListener('click', function(){
       clearCustomer(); state.customer=null; state.name=''; state.phone=''; state.tab='home';
       toast('Log keluar berjaya');
@@ -789,6 +896,12 @@
     });
     var btnBookBack=document.getElementById('btnBookBack'); if(btnBookBack) btnBookBack.addEventListener('click', prevStep);
     var btnShareBack=document.getElementById('btnShareBack'); if(btnShareBack) btnShareBack.addEventListener('click', function(){ state.tab=state.prevTab||'home'; render(); });
+    var btnOwnerBack=document.getElementById('btnOwnerBack'); if(btnOwnerBack) btnOwnerBack.addEventListener('click', function(){ state.tab=state.prevTab||'profile'; render(); });
+
+    var ownerPin=document.getElementById('ownerPin'); if(ownerPin) ownerPin.addEventListener('input', function(){ state.ownerPin=ownerPin.value; });
+    var ownerNote=document.getElementById('ownerNote'); if(ownerNote) ownerNote.addEventListener('input', function(){ state.ownerNote=ownerNote.value; });
+    var btnShopClose=document.getElementById('btnShopClose'); if(btnShopClose) btnShopClose.addEventListener('click', function(){ submitShopStatus(false); });
+    var btnShopOpen=document.getElementById('btnShopOpen'); if(btnShopOpen) btnShopOpen.addEventListener('click', function(){ submitShopStatus(true); });
 
     var btnCopyLink=document.getElementById('btnCopyLink');
     if(btnCopyLink) btnCopyLink.addEventListener('click', function(){
@@ -808,7 +921,12 @@
   state.customer = loadCustomer();
   if(state.customer){ state.name = state.customer.name; state.phone = state.customer.phone; }
   render();
-  if(supa && state.customer){ loadBookings(); }
+  if(supa){
+    loadShopStatus();
+    subscribeShopStatus();
+    subscribeSlotUpdates();
+    if(state.customer){ loadBookings(); }
+  }
 })();
 </script>
 </body>

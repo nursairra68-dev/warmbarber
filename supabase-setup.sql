@@ -70,3 +70,43 @@ as $$
   limit 50;
 $$;
 grant execute on function get_my_bookings(text) to anon;
+
+-- ====================================================================
+-- STATUS KEDAI (buka / tutup sementara) -- untuk ciri "Pengurusan Kedai"
+-- dalam tab Profil app. Sesiapa boleh BACA status ni (supaya app tahu
+-- nak papar/sekat tempahan), tapi hanya boleh TUKAR melalui fungsi
+-- set_shop_status() yang disekat dengan PIN rahsia.
+-- ====================================================================
+create table if not exists shop_status (
+  id smallint primary key default 1,
+  is_open boolean not null default true,
+  note text,
+  updated_at timestamptz not null default now(),
+  constraint single_row check (id = 1)
+);
+insert into shop_status (id, is_open, note) values (1, true, null) on conflict (id) do nothing;
+
+alter table shop_status enable row level security;
+
+create policy "Public can read shop status"
+  on shop_status for select
+  to anon
+  using (true);
+
+-- TUKAR '267910' kepada PIN pilihan awak sendiri sebelum guna secara
+-- production -- ini PIN lalai yang Claude jana untuk awak.
+create or replace function set_shop_status(p_is_open boolean, p_note text, p_pin text)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if p_pin is distinct from '267910' then
+    return false;
+  end if;
+  update shop_status set is_open = p_is_open, note = p_note, updated_at = now() where id = 1;
+  return true;
+end;
+$$;
+grant execute on function set_shop_status(boolean, text, text) to anon;

@@ -88,6 +88,39 @@ terus ingat & terus boleh tempah/tengok tempahan lama mereka tanpa isi
 semula. Pelanggan boleh "Log keluar" dalam tab Profil untuk padam
 maklumat ni dari telefon mereka.
 
+## 9. Slot ditutup serta-merta untuk semua orang (live)
+
+Bila seorang pelanggan berjaya tempah satu slot, slot tu terus nampak
+"disabled" untuk pelanggan LAIN yang sedang tengok skrin yang sama pada
+masa itu juga — tak perlu refresh. Pangkalan data pula yang jadi
+penjaga terakhir (unique constraint), jadi walaupun dua orang cuba pada
+saat yang sama, hanya SATU akan berjaya.
+
+## 10. Lokasi boleh ditekan terus buka peta
+
+Tekan bahagian "Lokasi" (skrin Utama atau Kongsi App) — ia akan buka
+Google Maps terus pada alamat kedai, dalam tab baru.
+
+## 11. Pemilik boleh tutup/buka kedai (rehat, cuti, dll)
+
+Dalam tab **Profil -> Pengurusan Kedai (Pemilik)**:
+
+1. Masukkan PIN pemilik: **267910** (PIN lalai -- tukar bila-bila
+   masa dengan minta Claude kemaskini fungsi `set_shop_status` dalam
+   Supabase kepada PIN pilihan awak sendiri)
+2. (Pilihan) tulis nota untuk pelanggan, cth. "Cuti Hari Raya, buka
+   semula esok"
+3. Tekan **"Tutup Kedai (Rehat/Off)"**
+
+Bila kedai ditutup:
+- Semua pelanggan (di semua telefon) terus nampak banner "Kedai
+  sedang tutup sementara" + nota awak pada skrin Utama mereka
+- Butang "Tempah Janji Temu" jadi tidak aktif -- tiada tempahan baru
+  boleh dibuat
+
+Nak buka balik, masuk semula skrin yang sama, masukkan PIN, tekan
+**"Buka Kedai Semula"**.
+
 ## Apa yang dah berfungsi penuh sekarang
 
 - Tempahan pelanggan SIMPAN betul-betul dalam pangkalan data (Supabase),
@@ -100,6 +133,11 @@ maklumat ni dari telefon mereka.
 - Pelanggan daftar ringkas (nama + no fon) dan hanya boleh tengok
   tempahan dia sendiri — nama & no fon pelanggan lain TIDAK boleh dibaca
   oleh sesiapa pun melalui app ni
+- Slot yang baru ditempah terus tertutup secara live untuk semua
+  pelanggan lain yang sedang melihat skrin yang sama
+- Lokasi kedai boleh ditekan terus untuk buka Google Maps
+- Pemilik boleh tutup/buka kedai (rehat, cuti) pada bila-bila masa
+  dari dalam app sendiri, dengan PIN
 
 ## Nak domain sendiri (cth. warmbarber.com) kemudian?
 
