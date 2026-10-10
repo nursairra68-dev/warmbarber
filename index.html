@@ -354,7 +354,7 @@
     var key = busyKey();
     if(state.busyTimes[key]) return;
     state.busyTimes[key] = 'loading';
-    supa.from('bookings').select('time').eq('barber_name', barber.name).eq('date_full', fmtDateFull(DATES[state.selectedDateIdx]))
+    supa.from('public_booked_slots').select('time').eq('barber_name', barber.name).eq('date_full', fmtDateFull(DATES[state.selectedDateIdx]))
       .then(function(res){
         var busy={};
         if(!res.error){ res.data.forEach(function(r){ busy[r.time]=true; }); }
@@ -442,27 +442,13 @@
   }
 
   function loadBookings(){
-    if(!supa) return;
-    supa.from('bookings').select('*').order('created_at',{ascending:false}).limit(50).then(function(res){
+    if(!supa || !state.customer || !state.customer.phone) return;
+    supa.rpc('get_my_bookings', { p_phone: state.customer.phone }).then(function(res){
       if(res.error){ console.warn(res.error); return; }
-      state.bookings = res.data.map(mapRow);
+      state.bookings = (res.data||[]).map(mapRow);
       state.dbOk = true;
       render();
     });
-  }
-
-  function subscribeRealtime(){
-    if(!supa) return;
-    supa.channel('bookings-live')
-      .on('postgres_changes', {event:'INSERT', schema:'public', table:'bookings'}, function(payload){
-        var row = mapRow(payload.new);
-        if(state.bookings.some(function(b){ return b._id===row._id; })) return;
-        state.bookings.unshift(row);
-        if(state.tab!=='appointments'){ state.unread = true; }
-        toast('Tempahan baru diterima');
-        render();
-      })
-      .subscribe();
   }
 
   /* ---------------- Render: header ---------------- */
@@ -748,10 +734,13 @@
         render();
         return;
       }
+      booking._id = 'local-'+Date.now();
+      state.bookings.unshift(booking);
       state.justBooked = booking;
       notifyNtfy(booking);
       toast('Tempahan berjaya disahkan');
       render();
+      loadBookings();
     });
   }
 
@@ -796,6 +785,7 @@
       state.name = name; state.phone = phone;
       state.tab = 'home';
       render();
+      if(supa) loadBookings();
     });
     var btnBookBack=document.getElementById('btnBookBack'); if(btnBookBack) btnBookBack.addEventListener('click', prevStep);
     var btnShareBack=document.getElementById('btnShareBack'); if(btnShareBack) btnShareBack.addEventListener('click', function(){ state.tab=state.prevTab||'home'; render(); });
@@ -818,7 +808,7 @@
   state.customer = loadCustomer();
   if(state.customer){ state.name = state.customer.name; state.phone = state.customer.phone; }
   render();
-  if(supa){ loadBookings(); subscribeRealtime(); }
+  if(supa && state.customer){ loadBookings(); }
 })();
 </script>
 </body>

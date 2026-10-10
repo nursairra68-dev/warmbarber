@@ -53,14 +53,53 @@ Profil -> "Kongsi App (Kod QR)". Kod QR automatik ikut pautan sebenar
 (`warm-barber.vercel.app`) — boleh screenshot/cetak terus untuk letak kat
 kaunter kedai.
 
+## 6. Dapat notifikasi (bunyi + naik atas skrin) bila ada tempahan baru
+
+Guna servis percuma **ntfy.sh** — tak perlu daftar akaun, tak perlu
+bayar:
+
+1. Pasang app **"ntfy"** kat telefon awak (ada dalam App Store / Play Store)
+2. Buka app tu -> tekan **"+"** (subscribe ke topik baru)
+3. Masukkan topik ini (dah sedia dalam `config.js`): `warmbarber-89375760fd`
+   — atau tukar kepada topik rahsia lain kalau nak, asalkan sama macam
+   dalam `window.NTFY_TOPIC` di `config.js`
+4. Siap! Setiap kali pelanggan buat tempahan, telefon awak akan terima
+   push notification (ada bunyi + naik atas skrin) dengan nama, no fon,
+   khidmat & masa tempahan tu.
+
+Boleh subscribe topik yang sama dalam beberapa telefon (cth. awak +
+pekerja) kalau nak semua orang terima notifikasi yang sama.
+
+## 7. Elak double-booking (slot sama tak boleh ditempah 2 kali)
+
+Dah automatik — pangkalan data (Supabase) sendiri yang jaga: kalau dua
+pelanggan cuba tempah barber yang SAMA, tarikh & masa yang SAMA, orang
+kedua akan nampak mesej "slot ni baru sahaja diambil orang lain" dan
+disuruh pilih masa lain. Barber lain masih boleh ditempah pada masa yang
+sama — hanya slot barber yang sama yang disekat.
+
+## 8. Pelanggan perlu "daftar" (nama + no fon) untuk guna app
+
+Bila pelanggan buka app kali pertama, mereka akan diminta isi **nama +
+no telefon** sahaja (tiada SMS OTP, tiada emel/password — ringkas &
+percuma). Maklumat ni disimpan terus dalam telefon pelanggan tu sendiri
+(bukan dalam pangkalan data), supaya lain kali mereka buka app, app
+terus ingat & terus boleh tempah/tengok tempahan lama mereka tanpa isi
+semula. Pelanggan boleh "Log keluar" dalam tab Profil untuk padam
+maklumat ni dari telefon mereka.
+
 ## Apa yang dah berfungsi penuh sekarang
 
 - Tempahan pelanggan SIMPAN betul-betul dalam pangkalan data (Supabase),
   bukan sekadar dalam skrin
 - Sesiapa sahaja boleh buka pautan & buat tempahan sendiri (tiada had
   "view-only" lagi)
-- Bila ada tempahan baru, sesiapa yang ada app tu terbuka (kedai/staff)
-  nampak terus secara live tanpa refresh
+- Awak (pemilik kedai) terima notifikasi bunyi + naik atas skrin di
+  telefon setiap kali ada tempahan baru (via app ntfy — lihat #6)
+- Slot yang sama (barber + tarikh + masa) tak boleh ditempah dua kali
+- Pelanggan daftar ringkas (nama + no fon) dan hanya boleh tengok
+  tempahan dia sendiri — nama & no fon pelanggan lain TIDAK boleh dibaca
+  oleh sesiapa pun melalui app ni
 
 ## Nak domain sendiri (cth. warmbarber.com) kemudian?
 
