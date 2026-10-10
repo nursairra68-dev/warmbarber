@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Warm Barber — Panel Pemilik</title>
+<meta name="description" content="Panel log masuk berasingan untuk pemilik Warm Barber.">
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --bg:#131110;
+    --surface:#1c1915;
+    --surface-2:#262119;
+    --raised:#2d2820;
+    --border:#39322a;
+    --border-soft:#2a251f;
+    --fg:#f3ede2;
+    --muted:#a99a87;
+    --muted-2:#7d7064;
+    --accent:#c9a05c;
+    --accent-soft:#8a6a3f;
+    --accent-fg:#1a1510;
+    --success:#86a378;
+    --success-soft:#2a3326;
+    --live:#d9604a;
+    --live-soft:#3a2420;
+    --font-display:'Fraunces',ui-serif,Georgia,serif;
+    --font-body:'Manrope',system-ui,sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none;}
+  body{position:fixed;inset:0;width:100%;background:var(--bg);color:var(--fg);font-family:var(--font-body);}
+  h1,h2{font-family:var(--font-display);font-weight:600;margin:0;}
+  p{margin:0;}
+  button{font-family:inherit;}
+  [hidden]{display:none!important;}
+
+  .stage{min-height:100%;height:100%;display:flex;justify-content:center;background:var(--bg);}
+  .app{width:100%;max-width:430px;height:100%;display:flex;flex-direction:column;background:var(--surface);position:relative;overflow:hidden;}
+  @media (min-width:560px){
+    .stage{align-items:center;padding-block:44px;background:radial-gradient(60% 50% at 50% 0%, rgba(201,160,92,.10), transparent 70%),var(--bg);}
+    .app{height:850px;max-height:88vh;border-radius:34px;border:1px solid var(--border);box-shadow:0 50px 90px -30px rgba(0,0,0,.7), 0 0 0 7px rgba(0,0,0,.28);}
+  }
+
+  .topbar{flex:0 0 auto;display:flex;align-items:center;gap:12px;padding:18px 20px 14px;border-bottom:1px solid var(--border-soft);}
+  .brandmark{width:38px;height:38px;border-radius:11px;flex:0 0 auto;background:linear-gradient(155deg,var(--accent),var(--accent-soft));display:flex;align-items:center;justify-content:center;color:var(--accent-fg);}
+  .brandmark svg{width:19px;height:19px;}
+  .eyebrow{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:700;display:block;}
+  .topbar h1{font-size:19px;color:var(--fg);}
+
+  main{flex:1 1 auto;min-height:0;overflow-y:auto;padding:22px 20px 28px;display:flex;flex-direction:column;gap:18px;}
+
+  .btn{appearance:none;border:none;cursor:pointer;border-radius:13px;font-weight:700;font-size:14.5px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 18px;width:100%;}
+  .btn:active{transform:scale(.97);}
+  .btn-primary{background:var(--accent);color:var(--accent-fg);}
+  .btn-ghost{background:var(--surface-2);color:var(--fg);border:1px solid var(--border);}
+  .btn[disabled]{opacity:.4;cursor:not-allowed;}
+  .btn svg{width:16px;height:16px;}
+
+  .field{display:flex;flex-direction:column;gap:7px;}
+  .field label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+  .field input{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:13px 14px;font-size:14.5px;color:var(--fg);font-family:inherit;width:100%;}
+  .field input:focus{outline:2px solid var(--accent);outline-offset:1px;}
+
+  .summary-card{background:var(--surface-2);border:1px solid var(--border-soft);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:13px;}
+  .summary-row{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;}
+  .summary-row .k{color:var(--muted);}
+  .summary-row .v{color:var(--fg);font-weight:600;text-align:right;}
+  .badge-ok{font-size:10.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--success);background:var(--success-soft);border-radius:7px;padding:3px 8px;}
+  .badge-closed{font-size:10.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--live);background:var(--live-soft);border-radius:7px;padding:3px 8px;}
+
+  .login-wrap{display:flex;flex-direction:column;align-items:center;gap:16px;text-align:center;padding-top:40px;}
+  .login-wrap .brandmark{width:64px;height:64px;border-radius:18px;}
+  .login-wrap .brandmark svg{width:28px;height:28px;}
+
+  .toast{position:absolute;left:20px;right:20px;bottom:22px;z-index:20;background:var(--raised);border:1px solid var(--border);color:var(--fg);border-radius:13px;padding:12px 14px;font-size:13px;font-weight:600;opacity:0;transform:translateY(8px);transition:opacity .2s ease, transform .2s ease;pointer-events:none;}
+  .toast.show{opacity:1;transform:translateY(0);}
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="app" id="app">
+    <header class="topbar">
+      <div class="brandmark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+      <div><span class="eyebrow">Khas Pemilik</span><h1>Panel Pemilik</h1></div>
+    </header>
+    <main id="main"></main>
+    <div class="toast" id="toast"></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  var ICON = {
+    check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5 9.5 18 20 6"/></svg>',
+    lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+    logout:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3"/><path d="M15 16l4-4-4-4M19 12H9"/></svg>'
+  };
+
+  var PIN_KEY = 'warmbarber_owner_pin';
+
+  var supa = null;
+  if(window.supabase && window.SUPABASE_URL && window.SUPABASE_URL.indexOf('YOUR-PROJECT-ID')===-1){
+    try{ supa = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY); }catch(e){ supa=null; }
+  }
+
+  var state = {
+    loggedIn:false, pinInput:'', loginError:'', loginBusy:false,
+    shopOpen:true, shopNote:'', noteInput:'', toggleBusy:false
+  };
+
+  function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+  var toastTimer=null;
+  function toast(msg){
+    var el=document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer=setTimeout(function(){ el.classList.remove('show'); }, 2400);
+  }
+
+  function savedPin(){
+    try{ return sessionStorage.getItem(PIN_KEY) || ''; }catch(e){ return ''; }
+  }
+  function savePin(pin){
+    try{ sessionStorage.setItem(PIN_KEY, pin); }catch(e){}
+  }
+  function clearPin(){
+    try{ sessionStorage.removeItem(PIN_KEY); }catch(e){}
+  }
+
+  function applyShopRow(row){
+    if(!row) return;
+    state.shopOpen = row.is_open!==false;
+    state.shopNote = row.note || '';
+  }
+
+  function loadShopStatus(){
+    if(!supa) return;
+    supa.from('shop_status').select('*').eq('id',1).single().then(function(res){
+      if(res.error){ console.warn(res.error); return; }
+      applyShopRow(res.data);
+      render();
+    });
+  }
+
+  function subscribeShopStatus(){
+    if(!supa) return;
+    supa.channel('owner-shop-status-live')
+      .on('postgres_changes', {event:'UPDATE', schema:'public', table:'shop_status'}, function(payload){
+        applyShopRow(payload.new);
+        render();
+      })
+      .subscribe();
+  }
+
+  function doLogin(){
+    if(!supa){ state.loginError='Tidak tersambung ke pangkalan data'; render(); return; }
+    var pin = (state.pinInput||'').trim();
+    if(!pin){ state.loginError='Sila masukkan PIN'; render(); return; }
+    state.loginBusy = true; state.loginError=''; render();
+    supa.rpc('verify_owner_pin', { p_pin: pin }).then(function(res){
+      state.loginBusy = false;
+      if(res.error){ state.loginError='Ralat sambungan, cuba lagi'; console.warn(res.error); render(); return; }
+      if(res.data !== true){ state.loginError='PIN salah'; render(); return; }
+      savePin(pin);
+      state.loggedIn = true;
+      state.noteInput = state.shopNote;
+      render();
+      loadShopStatus();
+      subscribeShopStatus();
+    });
+  }
+
+  function doLogout(){
+    clearPin();
+    state.loggedIn = false;
+    state.pinInput = '';
+    render();
+  }
+
+  function toggleShop(nextOpen){
+    if(!supa || state.toggleBusy) return;
+    var pin = savedPin();
+    if(!pin){ toast('Sesi log masuk tamat, sila log masuk semula'); doLogout(); return; }
+    state.toggleBusy = true; render();
+    var note = nextOpen ? null : (state.noteInput||'').trim();
+    supa.rpc('set_shop_status', { p_is_open: nextOpen, p_note: note, p_pin: pin }).then(function(res){
+      state.toggleBusy = false;
+      if(res.error){ toast('Gagal kemaskini status'); console.warn(res.error); render(); return; }
+      if(res.data === false){ toast('PIN tidak sah, sila log masuk semula'); doLogout(); return; }
+      state.shopOpen = nextOpen;
+      state.shopNote = note || '';
+      toast(nextOpen ? 'Kedai dibuka semula' : 'Kedai ditutup sementara');
+      render();
+    });
+  }
+
+  function screenLogin(){
+    var html = '<div class="login-wrap">';
+    html += '<div class="brandmark">'+ICON.lock+'</div>';
+    html += '<h2 style="font-size:22px;">Log Masuk Pemilik</h2>';
+    html += '<p style="font-size:13px;color:var(--muted);max-width:28ch;line-height:1.5;">Panel ini berasingan daripada app pelanggan. Masukkan PIN pemilik untuk urus status kedai.</p>';
+    html += '</div>';
+    html += '<div class="field"><label for="pinInput">PIN Pemilik</label><input id="pinInput" type="password" inputmode="numeric" placeholder="Masukkan PIN" value="'+escapeHtml(state.pinInput||'')+'"></div>';
+    if(state.loginError){ html += '<p style="font-size:12.5px;color:var(--live);text-align:center;">'+escapeHtml(state.loginError)+'</p>'; }
+    html += '<button class="btn btn-primary" id="btnLogin" '+(state.loginBusy?'disabled':'')+'>'+(state.loginBusy?'Menyemak…':'Log Masuk')+'</button>';
+    return html;
+  }
+
+  function screenDashboard(){
+    var statusHtml = state.shopOpen
+      ? '<span class="badge-ok">Kedai Dibuka</span>'
+      : '<span class="badge-closed">Kedai Ditutup</span>';
+    var html = '<div class="summary-card" style="align-items:flex-start;"><div class="summary-row"><span class="k">Status Sekarang</span><span class="v">'+statusHtml+'</span></div>'+(state.shopNote?'<div class="summary-row"><span class="k">Nota</span><span class="v">'+escapeHtml(state.shopNote)+'</span></div>':'')+'</div>';
+    html += '<div class="field"><label for="noteInput">Nota untuk pelanggan (bila tutup)</label><input id="noteInput" type="text" placeholder="cth. Cuti Hari Raya, buka semula esok" value="'+escapeHtml(state.noteInput||'')+'"></div>';
+    if(state.shopOpen){
+      html += '<button class="btn" id="btnShopClose" style="background:var(--live);color:#fff;" '+(state.toggleBusy?'disabled':'')+'>'+ICON.lock+' Tutup Kedai (Rehat/Off)</button>';
+    } else {
+      html += '<button class="btn btn-primary" id="btnShopOpen" '+(state.toggleBusy?'disabled':'')+'>'+ICON.check+' Buka Kedai Semula</button>';
+    }
+    html += '<p style="font-size:11px;color:var(--muted-2);text-align:center;line-height:1.5;">Bila kedai ditutup, pelanggan tak boleh buat tempahan baru dan akan nampak nota di atas pada skrin utama mereka.</p>';
+    html += '<button class="btn btn-ghost" id="btnLogout">'+ICON.logout+' Log Keluar</button>';
+    return html;
+  }
+
+  function render(){
+    var main = document.getElementById('main');
+    main.innerHTML = state.loggedIn ? screenDashboard() : screenLogin();
+    bindEvents();
+  }
+
+  function bindEvents(){
+    var pinInput=document.getElementById('pinInput');
+    if(pinInput){
+      pinInput.addEventListener('input', function(){ state.pinInput=pinInput.value; });
+      pinInput.addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
+    }
+    var btnLogin=document.getElementById('btnLogin'); if(btnLogin) btnLogin.addEventListener('click', doLogin);
+
+    var noteInput=document.getElementById('noteInput'); if(noteInput) noteInput.addEventListener('input', function(){ state.noteInput=noteInput.value; });
+    var btnShopClose=document.getElementById('btnShopClose'); if(btnShopClose) btnShopClose.addEventListener('click', function(){ toggleShop(false); });
+    var btnShopOpen=document.getElementById('btnShopOpen'); if(btnShopOpen) btnShopOpen.addEventListener('click', function(){ toggleShop(true); });
+    var btnLogout=document.getElementById('btnLogout'); if(btnLogout) btnLogout.addEventListener('click', doLogout);
+  }
+
+  var existingPin = savedPin();
+  if(existingPin && supa){
+    state.loggedIn = true;
+    render();
+    loadShopStatus();
+    subscribeShopStatus();
+  } else {
+    render();
+  }
+})();
+</script>
+</body>
+</html>

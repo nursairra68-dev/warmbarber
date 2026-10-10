@@ -153,3 +153,23 @@ begin
 end;
 $$;
 grant execute on function cancel_my_booking(uuid, text) to anon;
+
+-- ====================================================================
+-- LOG MASUK PEMILIK BERASINGAN (owner.html) -- fungsi ringkas untuk
+-- sahkan PIN sahaja (tanpa ubah status kedai), supaya panel pemilik
+-- boleh "log masuk" dahulu sebelum tunjuk butang tutup/buka kedai.
+-- ====================================================================
+create or replace function verify_owner_pin(p_pin text)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if p_pin is distinct from '267910' then
+    return false;
+  end if;
+  return true;
+end;
+$$;
+grant execute on function verify_owner_pin(text) to anon;

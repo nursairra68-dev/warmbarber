@@ -146,6 +146,60 @@ pelanggan lain tempah -- sama macam ciri slot-locking di #9. Rekod
 tempahan asal tidak dipadam terus dari pangkalan data (hanya ditanda
 "dibatalkan") supaya pemilik kedai masih ada rujukan kalau perlu.
 
+## 14. Panel Pemilik sekarang app berasingan (log masuk berasingan)
+
+Pengurusan kedai (tutup/buka, nota) dah dipindah keluar dari app
+pelanggan sepenuhnya ke fail **`owner.html`** -- satu "app" kecil yang
+berasingan dengan log masuknya sendiri (PIN sahaja, tiada kaitan
+dengan pendaftaran nama/no fon pelanggan). Untuk akses:
+
+- Pelanggan: `warmbarber.vercel.app` (atau `index.html`)
+- Pemilik: `warmbarber.vercel.app/owner.html`
+
+Dalam app pelanggan, tab **Profil** ada pautan "Panel Pemilik (Log
+Masuk Berasingan)" yang buka `owner.html` dalam tab baru -- tapi ia
+tetap perlukan PIN sendiri untuk masuk, jadi pelanggan biasa tak boleh
+sentuh apa-apa walaupun jumpa pautan tu.
+
+PIN pemilik tetap **267910** (boleh tukar dalam fungsi
+`verify_owner_pin` dan `set_shop_status` di Supabase).
+
+## 15. Notifikasi bila pelanggan batalkan tempahan
+
+Selain notifikasi tempahan BARU (lihat #6), sekarang bila pelanggan
+batalkan tempahan sendiri, telefon pemilik juga terima push
+notification berasingan ("Tempahan Dibatalkan: [rujukan]") dengan
+nama, no fon dan masa asal tempahan tu -- guna topik ntfy yang sama.
+
+## 16. Kaedah Pembayaran (kod QR + tunai)
+
+Dalam tab **Profil -> Kaedah Pembayaran**, pelanggan sekarang boleh
+nampak kod QR pembayaran (DuitNow / Touch 'n Go) dan maklumat "boleh
+bayar tunai". Untuk letak kod QR SEBENAR kedai awak:
+
+1. Simpan gambar kod QR awak sebagai **`payment-qr.jpg`**
+2. Dalam repo GitHub, upload/gantikan fail dengan nama tu (sama cara
+   macam upload `index.html` -- lihat #1)
+3. App akan terus papar kod QR baru tu -- tak perlu ubah kod langsung
+
+Sebelum fail tu diupload, skrin akan papar ruang kosong dengan arahan
+ringkas, bukan error.
+
+## 17. Masa slot "penuh" lebih jelas + lebih boleh dipercayai
+
+Slot yang penuh kini ada sempadan merah lebih tebal supaya jelas
+nampak. Kami juga baiki bug di mana penanda "penuh" kadangkala lambat
+atau tak terus nampak selepas tempahan baru dibuat -- sekarang app
+semak semula senarai slot serta-merta lepas tempahan/batalan berjaya,
+tak bergantung semata-mata pada sambungan live.
+
+## 18. Skrin tak lagi "tergelongsor" bila scroll (mobile)
+
+Dulu pada sesetengah pelayar telefon, bar tab bawah (Utama/Tempah/
+Janji Temu/Profil) boleh nampak bergerak atau tersembunyi sekejap bila
+pelanggan scroll skrin. Dah dibetulkan -- hanya kandungan tengah yang
+scroll, bar atas & bawah kekal statik.
+
 ## Apa yang dah berfungsi penuh sekarang
 
 - Tempahan pelanggan SIMPAN betul-betul dalam pangkalan data (Supabase),
@@ -163,10 +217,14 @@ tempahan asal tidak dipadam terus dari pangkalan data (hanya ditanda
 - Lokasi kedai boleh ditekan terus untuk buka Google Maps
 - Pemilik boleh tutup/buka kedai (rehat, cuti) pada bila-bila masa
   dari dalam app sendiri, dengan PIN
-- Slot yang sudah ditempah ditanda dengan jelas (warna, garis potong,
-  label "PENUH") pada skrin pilih masa
+- Slot yang sudah ditempah ditanda dengan jelas (sempadan merah,
+  garis potong, label "PENUH") pada skrin pilih masa
 - Pelanggan boleh batalkan tempahan sendiri, selagi masih 30 minit
-  atau lebih sebelum masa tempahan
+  atau lebih sebelum masa tempahan -- pemilik terima notifikasi bila
+  ini berlaku
+- Panel pemilik (`owner.html`) kini app berasingan dengan log masuk
+  PIN sendiri, berasingan sepenuhnya dari app pelanggan
+- Skrin Kaedah Pembayaran untuk papar kod QR pembayaran + tunai
 
 ## Nak domain sendiri (cth. warmbarber.com) kemudian?
 
