@@ -1,0 +1,694 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Warm Barber</title>
+<meta name="description" content="Tempah janji temu di Warm Barber dalam masa kurang seminit.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    --bg:#131110;
+    --surface:#1c1915;
+    --surface-2:#262119;
+    --raised:#2d2820;
+    --border:#39322a;
+    --border-soft:#2a251f;
+    --fg:#f3ede2;
+    --muted:#a99a87;
+    --muted-2:#7d7064;
+    --accent:#c9a05c;
+    --accent-soft:#8a6a3f;
+    --accent-fg:#1a1510;
+    --success:#86a378;
+    --success-soft:#2a3326;
+    --danger:#c0735b;
+    --live:#d9604a;
+    --live-soft:#3a2420;
+    --font-display:'Fraunces',ui-serif,Georgia,serif;
+    --font-body:'Manrope',system-ui,sans-serif;
+    --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;margin:0;}
+  body{background:var(--bg);color:var(--fg);font-family:var(--font-body);}
+  h1,h2,h3{font-family:var(--font-display);font-weight:600;margin:0;}
+  p{margin:0;}
+  button{font-family:inherit;}
+  ::selection{background:var(--accent);color:var(--accent-fg);}
+  [hidden]{display:none!important;}
+  img{max-width:100%;}
+
+  .stage{min-height:100%;display:flex;justify-content:center;background:var(--bg);}
+  .app{width:100%;max-width:430px;height:100%;display:flex;flex-direction:column;background:var(--surface);position:relative;overflow:hidden;}
+
+  @media (min-width:560px){
+    .stage{align-items:center;padding-block:44px;background:radial-gradient(60% 50% at 50% 0%, rgba(201,160,92,.10), transparent 70%),repeating-linear-gradient(135deg, rgba(255,255,255,.015) 0 2px, transparent 2px 5px),var(--bg);}
+    .app{height:850px;max-height:88vh;border-radius:34px;border:1px solid var(--border);box-shadow:0 50px 90px -30px rgba(0,0,0,.7), 0 0 0 7px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.04);}
+  }
+
+  .topbar{flex:0 0 auto;display:flex;align-items:center;gap:12px;padding:18px 20px 14px;border-bottom:1px solid var(--border-soft);background:var(--surface);position:relative;z-index:5;}
+  .topbar .back,.topbar .iconbtn{width:34px;height:34px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;background:var(--surface-2);border:1px solid var(--border-soft);color:var(--fg);cursor:pointer;}
+  .topbar .back svg,.topbar .iconbtn svg{width:17px;height:17px;}
+  .topbar .title-wrap{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1;}
+  .topbar .eyebrow{font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:700;}
+  .topbar h1{font-size:19px;color:var(--fg);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .brandmark{width:38px;height:38px;border-radius:11px;flex:0 0 auto;background:linear-gradient(155deg,var(--accent),var(--accent-soft));display:flex;align-items:center;justify-content:center;color:var(--accent-fg);}
+  .brandmark svg{width:19px;height:19px;}
+
+  main{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+  .screen{padding:20px 20px 28px;display:flex;flex-direction:column;gap:22px;animation:rise .35s ease both;}
+  @media (prefers-reduced-motion:reduce){.screen{animation:none;}}
+  @keyframes rise{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+  .tabbar{flex:0 0 auto;display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--border-soft);background:var(--surface);padding:9px 6px calc(10px + env(safe-area-inset-bottom,0px));position:relative;z-index:5;}
+  .tabbtn{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;color:var(--muted-2);padding:6px 2px;cursor:pointer;font-size:10.5px;font-weight:700;letter-spacing:.01em;border-radius:10px;}
+  .tabbtn svg{width:21px;height:21px;}
+  .tabbtn.active{color:var(--accent);}
+  .tabbtn:active{background:var(--surface-2);}
+  .tabdot{position:absolute;top:3px;right:28%;width:8px;height:8px;border-radius:50%;background:var(--live);border:1.5px solid var(--surface);}
+
+  .hero{border-radius:20px;overflow:hidden;position:relative;background:radial-gradient(120% 140% at 15% 0%, rgba(201,160,92,.30), transparent 55%),linear-gradient(165deg,#241f18,#171310);border:1px solid var(--border);padding:26px 20px 22px;}
+  .hero::after{content:"";position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(rgba(255,255,255,.05) .6px, transparent .6px);background-size:14px 14px;opacity:.5;}
+  .hero-inner{position:relative;display:flex;flex-direction:column;gap:14px;}
+  .hero-tag{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);}
+  .hero-tag svg{width:13px;height:13px;}
+  .hero h2{font-size:27px;line-height:1.14;color:var(--fg);}
+  .hero p.sub{font-size:13.5px;color:var(--muted);line-height:1.55;max-width:34ch;}
+  .hero-stats{display:flex;gap:18px;padding-top:4px;}
+  .hero-stat b{display:block;font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:16px;color:var(--fg);}
+  .hero-stat span{font-size:10.5px;color:var(--muted-2);text-transform:uppercase;letter-spacing:.06em;}
+
+  .btn{appearance:none;border:none;cursor:pointer;border-radius:13px;font-weight:700;font-size:14.5px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:14px 18px;transition:transform .12s ease;}
+  .btn:active{transform:scale(.97);}
+  .btn-primary{background:var(--accent);color:var(--accent-fg);box-shadow:0 10px 22px -10px rgba(201,160,92,.55);}
+  .btn-ghost{background:var(--surface-2);color:var(--fg);border:1px solid var(--border);}
+  .btn-block{width:100%;}
+  .btn[disabled]{opacity:.4;cursor:not-allowed;box-shadow:none;}
+  .btn svg{width:16px;height:16px;}
+
+  .section-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;}
+  .section-head h3{font-size:15px;color:var(--fg);}
+  .section-head .link{font-size:12.5px;color:var(--accent);font-weight:700;background:none;border:none;cursor:pointer;}
+
+  .info-row{display:flex;align-items:flex-start;gap:12px;}
+  .info-row .ic{width:34px;height:34px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border-soft);display:flex;align-items:center;justify-content:center;flex:0 0 auto;color:var(--accent);}
+  .info-row .ic svg{width:16px;height:16px;}
+  .info-row .tx strong{display:block;font-size:13.5px;color:var(--fg);font-weight:700;}
+  .info-row .tx span{font-size:12.5px;color:var(--muted);line-height:1.5;}
+
+  .quickgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .quickcard{background:var(--surface-2);border:1px solid var(--border-soft);border-radius:14px;padding:13px 10px;display:flex;flex-direction:column;align-items:center;gap:7px;text-align:center;cursor:pointer;}
+  .quickcard .ic{width:32px;height:32px;border-radius:9px;background:var(--raised);display:flex;align-items:center;justify-content:center;color:var(--accent);}
+  .quickcard .ic svg{width:16px;height:16px;}
+  .quickcard span{font-size:11.5px;font-weight:700;color:var(--fg);line-height:1.3;}
+
+  .live-card{display:flex;align-items:center;gap:14px;background:var(--surface-2);border:1px solid var(--border-soft);border-radius:18px;padding:13px;cursor:pointer;width:100%;text-align:left;border-width:1px;}
+  .live-stage{position:relative;width:64px;height:64px;border-radius:14px;flex:0 0 auto;background:var(--raised);overflow:hidden;}
+  .live-stage svg{width:100%;height:100%;display:block;}
+  .live-badge{position:absolute;left:4px;top:4px;display:flex;align-items:center;gap:3px;background:var(--live);color:#fff;font-size:8px;font-weight:800;letter-spacing:.03em;border-radius:5px;padding:2px 4px 2px 3px;}
+  .live-badge i{width:5px;height:5px;border-radius:50%;background:#fff;display:block;animation:pulse 1.2s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.25;}}
+  .clipper{animation:buzz .15s linear infinite;transform-origin:70px 40px;}
+  @keyframes buzz{0%,100%{transform:translateX(0) rotate(0deg);}50%{transform:translateX(1.4px) rotate(-2deg);}}
+  .bit{animation:fall 1.8s ease-in infinite;}
+  .bit.b2{animation-delay:.5s;}
+  .bit.b3{animation-delay:1.05s;}
+  @keyframes fall{0%{transform:translateY(-2px);opacity:0;}20%{opacity:1;}100%{transform:translateY(16px);opacity:0;}}
+  @media (prefers-reduced-motion:reduce){.clipper,.bit,.live-badge i{animation:none;}}
+  .live-text{flex:1;min-width:0;}
+  .live-text strong{display:block;font-size:13.5px;color:var(--fg);}
+  .live-text span{font-size:12px;color:var(--muted);}
+  .live-text .live-label{display:block;font-size:10px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--live);margin-bottom:3px;}
+
+  .stepper{display:flex;align-items:center;gap:6px;padding:2px 2px 4px;}
+  .step{flex:1;display:flex;flex-direction:column;gap:7px;}
+  .step .bar{height:3px;border-radius:3px;background:var(--border);}
+  .step.done .bar,.step.current .bar{background:var(--accent);}
+  .step .lbl{font-size:10px;font-weight:700;letter-spacing:.03em;color:var(--muted-2);text-transform:uppercase;}
+  .step.done .lbl,.step.current .lbl{color:var(--accent);}
+
+  .svc-card{display:flex;align-items:center;gap:13px;background:var(--surface-2);border:1px solid var(--border-soft);border-radius:16px;padding:14px;cursor:pointer;text-align:left;width:100%;}
+  .svc-card.selected{border-color:var(--accent);background:linear-gradient(0deg, rgba(201,160,92,.10), rgba(201,160,92,.10)), var(--surface-2);}
+  .svc-card .chk{width:22px;height:22px;border-radius:7px;border:1.5px solid var(--border);flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:transparent;}
+  .svc-card.selected .chk{background:var(--accent);border-color:var(--accent);color:var(--accent-fg);}
+  .svc-card .chk svg{width:13px;height:13px;}
+  .svc-card .body{flex:1;min-width:0;}
+  .svc-card .body strong{display:block;font-size:14.5px;color:var(--fg);font-weight:700;}
+  .svc-card .body p{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.4;}
+  .svc-card .meta{display:flex;gap:10px;margin-top:7px;}
+  .pricepill,.timepill{font-family:var(--font-mono);font-size:11px;font-weight:600;background:var(--raised);border:1px solid var(--border-soft);border-radius:7px;padding:3px 7px;color:var(--muted);font-variant-numeric:tabular-nums;}
+
+  .bb-card{display:flex;align-items:center;gap:13px;background:var(--surface-2);border:1px solid var(--border-soft);border-radius:16px;padding:13px;cursor:pointer;text-align:left;position:relative;width:100%;}
+  .bb-card.selected{border-color:var(--accent);background:linear-gradient(0deg, rgba(201,160,92,.10), rgba(201,160,92,.10)), var(--surface-2);}
+  .bb-avatar{width:48px;height:48px;border-radius:50%;flex:0 0 auto;background:linear-gradient(155deg,var(--raised),var(--surface-2));border:1px solid var(--border-soft);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:600;font-size:16px;color:var(--accent);}
+  .bb-body{flex:1;min-width:0;}
+  .bb-body .row1{display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+  .bb-body strong{font-size:14.5px;color:var(--fg);font-weight:700;}
+  .bb-tag{font-size:9.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);background:rgba(201,160,92,.14);border-radius:6px;padding:2px 6px;}
+  .bb-body p{font-size:12px;color:var(--muted);margin-top:2px;}
+  .bb-foot{display:flex;align-items:center;gap:10px;margin-top:6px;font-size:11.5px;color:var(--muted-2);font-family:var(--font-mono);font-variant-numeric:tabular-nums;}
+  .bb-foot .star{display:inline-flex;align-items:center;gap:3px;color:var(--accent);}
+  .bb-foot svg{width:12px;height:12px;}
+  .bb-check{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--border);flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:transparent;}
+  .bb-card.selected .bb-check{background:var(--accent);border-color:var(--accent);color:var(--accent-fg);}
+  .bb-check svg{width:13px;height:13px;}
+
+  .datestrip{display:flex;gap:9px;overflow-x:auto;padding:3px 2px 9px;scrollbar-width:none;}
+  .datestrip::-webkit-scrollbar{display:none;}
+  .datechip{flex:0 0 auto;width:54px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:11px 0 10px;border-radius:14px;background:var(--surface-2);border:1px solid var(--border-soft);cursor:pointer;}
+  .datechip.selected{background:var(--accent);border-color:var(--accent);}
+  .datechip .dow{font-size:10px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--muted-2);}
+  .datechip.selected .dow{color:rgba(26,21,16,.65);}
+  .datechip .num{font-family:var(--font-display);font-size:18px;font-weight:600;color:var(--fg);}
+  .datechip.selected .num{color:var(--accent-fg);}
+
+  .timegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;}
+  .timechip{font-family:var(--font-mono);font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;background:var(--surface-2);border:1px solid var(--border-soft);border-radius:11px;padding:11px 4px;text-align:center;color:var(--fg);cursor:pointer;}
+  .timechip.selected{background:var(--accent);border-color:var(--accent);color:var(--accent-fg);}
+  .timechip[disabled]{opacity:.32;cursor:not-allowed;text-decoration:line-through;}
+
+  .field{display:flex;flex-direction:column;gap:7px;}
+  .field label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+  .field input{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:13px 14px;font-size:14.5px;color:var(--fg);font-family:inherit;width:100%;}
+  .field input:focus{outline:2px solid var(--accent);outline-offset:1px;}
+  .field input::placeholder{color:var(--muted-2);}
+
+  .summary-card{background:var(--surface-2);border:1px solid var(--border-soft);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:13px;}
+  .summary-row{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;}
+  .summary-row .k{color:var(--muted);}
+  .summary-row .v{color:var(--fg);font-weight:600;text-align:right;}
+  .summary-divider{height:1px;background:var(--border-soft);}
+  .summary-total{display:flex;justify-content:space-between;align-items:baseline;}
+  .summary-total .k{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-weight:700;}
+  .summary-total .v{font-family:var(--font-mono);font-size:22px;color:var(--accent);font-weight:600;font-variant-numeric:tabular-nums;}
+
+  .dock{flex:0 0 auto;padding:14px 20px 18px;border-top:1px solid var(--border-soft);background:var(--surface);display:flex;flex-direction:column;gap:9px;}
+  .dock-total{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--muted);}
+  .dock-total b{font-family:var(--font-mono);color:var(--fg);font-size:16px;font-variant-numeric:tabular-nums;}
+
+  .empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;padding:52px 20px 20px;}
+  .empty .ic{width:68px;height:68px;border-radius:50%;background:var(--surface-2);border:1px solid var(--border-soft);display:flex;align-items:center;justify-content:center;color:var(--accent);}
+  .empty .ic svg{width:30px;height:30px;}
+  .empty h3{font-size:17px;color:var(--fg);}
+  .empty p{font-size:13px;color:var(--muted);max-width:26ch;line-height:1.5;}
+
+  .apt-card{background:var(--surface-2);border:1px solid var(--border-soft);border-radius:16px;padding:15px;display:flex;flex-direction:column;gap:11px;}
+  .apt-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+  .apt-ref{font-family:var(--font-mono);font-size:11px;color:var(--muted-2);letter-spacing:.03em;}
+  .badge-ok{font-size:10.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--success);background:var(--success-soft);border-radius:7px;padding:3px 8px;white-space:nowrap;}
+  .apt-when{display:flex;align-items:center;gap:8px;}
+  .apt-when .ic{color:var(--accent);flex:0 0 auto;}
+  .apt-when .ic svg{width:17px;height:17px;}
+  .apt-when strong{font-size:15px;color:var(--fg);}
+  .apt-when span{display:block;font-size:12px;color:var(--muted);}
+  .apt-services{font-size:12.5px;color:var(--muted);line-height:1.5;}
+  .apt-foot{display:flex;justify-content:space-between;align-items:center;padding-top:9px;border-top:1px solid var(--border-soft);}
+  .apt-foot .with{font-size:12px;color:var(--muted-2);}
+  .apt-foot b{font-family:var(--font-mono);color:var(--accent);font-size:14px;}
+
+  .success-wrap{display:flex;flex-direction:column;align-items:center;text-align:center;gap:16px;padding-top:30px;}
+  .success-ic{width:78px;height:78px;border-radius:50%;background:var(--success-soft);display:flex;align-items:center;justify-content:center;color:var(--success);animation:pop .4s ease both;}
+  .success-ic svg{width:36px;height:36px;}
+  @keyframes pop{0%{transform:scale(.6);opacity:0;}70%{transform:scale(1.08);}100%{transform:scale(1);opacity:1;}}
+  @media (prefers-reduced-motion:reduce){.success-ic{animation:none;}}
+  .success-wrap h2{font-size:22px;}
+  .success-wrap p{font-size:13.5px;color:var(--muted);max-width:30ch;line-height:1.5;}
+  .refcode{font-family:var(--font-mono);font-size:13px;letter-spacing:.05em;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:8px 14px;color:var(--accent);}
+
+  .profile-card{display:flex;align-items:center;gap:14px;background:var(--surface-2);border:1px solid var(--border-soft);border-radius:18px;padding:16px;}
+  .profile-avatar{width:56px;height:56px;border-radius:50%;background:linear-gradient(155deg,var(--accent),var(--accent-soft));display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:600;font-size:19px;color:var(--accent-fg);flex:0 0 auto;}
+  .profile-card strong{display:block;font-size:16px;color:var(--fg);}
+  .profile-card span{font-size:12.5px;color:var(--muted);}
+  .menu-list{display:flex;flex-direction:column;border:1px solid var(--border-soft);border-radius:16px;overflow:hidden;}
+  .menu-item{display:flex;align-items:center;gap:12px;padding:14px 15px;background:var(--surface-2);border-bottom:1px solid var(--border-soft);cursor:pointer;}
+  .menu-item:last-child{border-bottom:none;}
+  .menu-item .ic{width:30px;height:30px;border-radius:9px;background:var(--raised);display:flex;align-items:center;justify-content:center;color:var(--accent);flex:0 0 auto;}
+  .menu-item .ic svg{width:15px;height:15px;}
+  .menu-item span{flex:1;font-size:13.5px;font-weight:600;color:var(--fg);}
+  .menu-item .chev{color:var(--muted-2);}
+  .menu-item .chev svg{width:15px;height:15px;}
+
+  .qr-card{display:flex;flex-direction:column;align-items:center;gap:14px;background:var(--surface-2);border:1px solid var(--border-soft);border-radius:20px;padding:24px 20px;}
+  .qr-box{width:188px;height:188px;background:#ffffff;border-radius:16px;padding:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 14px 28px -14px rgba(0,0,0,.5);}
+  .qr-box img,.qr-box canvas,.qr-box table{display:block;width:100%!important;height:100%!important;}
+  .qr-caption{text-align:center;}
+  .qr-caption strong{display:block;font-size:15px;color:var(--fg);margin-bottom:3px;}
+  .qr-caption span{font-size:12.5px;color:var(--muted);}
+  .link-row{display:flex;align-items:center;gap:8px;background:var(--raised);border:1px solid var(--border-soft);border-radius:12px;padding:10px 12px;width:100%;}
+  .link-row span{flex:1;min-width:0;font-family:var(--font-mono);font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .copybtn{flex:0 0 auto;width:30px;height:30px;border-radius:9px;background:var(--surface-2);border:1px solid var(--border-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .copybtn svg{width:14px;height:14px;}
+  .note-box{font-size:12px;color:var(--muted-2);line-height:1.6;background:var(--surface-2);border:1px solid var(--border-soft);border-radius:14px;padding:13px 14px;}
+
+  .toast{position:absolute;left:20px;right:20px;bottom:86px;z-index:20;background:var(--raised);border:1px solid var(--border);color:var(--fg);border-radius:13px;padding:12px 14px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:9px;box-shadow:0 14px 30px -12px rgba(0,0,0,.5);opacity:0;transform:translateY(8px);transition:opacity .2s ease, transform .2s ease;pointer-events:none;}
+  .toast.show{opacity:1;transform:translateY(0);}
+  .toast svg{width:16px;height:16px;color:var(--accent);flex:0 0 auto;}
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <div class="app" id="app">
+    <header class="topbar" id="topbar"></header>
+    <main id="main"></main>
+    <div class="dock" id="dock" hidden></div>
+    <nav class="tabbar" id="tabbar">
+      <button class="tabbtn" data-tab="home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1H10v-5.5h4V20h3.5a1 1 0 0 0 1-1v-9"/></svg>
+        Utama
+      </button>
+      <button class="tabbtn" data-tab="booking">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>
+        Tempah
+      </button>
+      <button class="tabbtn" data-tab="appointments">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+        Janji Temu
+      </button>
+      <button class="tabbtn" data-tab="profile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M4.5 20c1.4-3.6 4.3-5.5 7.5-5.5s6.1 1.9 7.5 5.5"/></svg>
+        Profil
+      </button>
+    </nav>
+    <div class="toast" id="toast"></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="config.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  var ICON = {
+    scissors:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.5"/><circle cx="6" cy="18" r="2.5"/><path d="M8.6 7.6 20 18M20 6 8.6 16.4"/></svg>',
+    chevLeft:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5 8 12l7 7"/></svg>',
+    chevRight:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>',
+    check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5 9.5 18 20 6"/></svg>',
+    checkBig:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5 9.5 18 20 6"/></svg>',
+    star:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3.3l2.6 5.5 6 .7-4.4 4.2 1.1 6-5.3-2.9-5.3 2.9 1.1-6L3.4 9.5l6-.7z"/></svg>',
+    calendar:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>',
+    clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+    pin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.4A7 7 0 0 1 19 9.6C19 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.4"/></svg>',
+    phone:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h3l1.6 4.5L8.3 9.4a12 12 0 0 0 6.3 6.3l1.9-2.3L21 15v3a2 2 0 0 1-2.2 2C10.5 19.5 4.5 13.5 4 5.2A2 2 0 0 1 6 3Z"/></svg>',
+    user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.5"/><path d="M4.5 20c1.4-3.6 4.3-5.5 7.5-5.5s6.1 1.9 7.5 5.5"/></svg>',
+    spark:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 6.2L20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8z"/></svg>',
+    history:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 9A8.5 8.5 0 1 1 5 15.5"/><path d="M3.5 4v5h5M12 7.5V12l3 2"/></svg>',
+    card:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10.5h18"/></svg>',
+    bell:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 10a6 6 0 0 1 12 0c0 4 1.3 5.5 1.3 5.5H4.7S6 14 6 10Z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>',
+    help:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M9.6 9.3a2.4 2.4 0 1 1 3.4 2.2c-.9.5-1.4 1-1.4 2.1"/><path d="M12 17.2h.01"/></svg>',
+    logout:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h3"/><path d="M15 16l4-4-4-4M19 12H9"/></svg>',
+    plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>',
+    qr:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="6.5" height="6.5" rx="1.2"/><rect x="14" y="3.5" width="6.5" height="6.5" rx="1.2"/><rect x="3.5" y="14" width="6.5" height="6.5" rx="1.2"/><path d="M14 14h3v3h-3zM20.5 14v3M14 20.5h3M20.5 20.5h.01"/></svg>',
+    copy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8.5" y="8.5" width="11" height="11" rx="2.2"/><path d="M15 8.5V6.2A1.7 1.7 0 0 0 13.3 4.5H6.2A1.7 1.7 0 0 0 4.5 6.2v7.1A1.7 1.7 0 0 0 6.2 15H8.5"/></svg>'
+  };
+
+  var SHOP = {
+    name:"Warm Barber",
+    tagline:"Layanan mesra, potongan sentiasa kemas.",
+    address:"Kampung Carok Bunting, Kedah",
+    hours:"Isnin–Sabtu, 10 pagi–9 malam",
+    phone:"+60 13-625 8782"
+  };
+
+  var SERVICES = [
+    {id:'classic', name:'Gunting Klasik', desc:'Gunting kemas, trim kemaskini + cuci rambut', price:35, mins:30},
+    {id:'fade', name:'Fade & Taper', desc:'Fade berperingkat dengan garis tepi tajam', price:45, mins:45},
+    {id:'beard', name:'Janggut & Cukur Lurus', desc:'Bentuk janggut rapi + cukur pisau lurus', price:25, mins:25},
+    {id:'combo', name:'Gunting + Janggut', desc:'Pakej lengkap rambut & janggut sekali gus', price:55, mins:60},
+    {id:'kids', name:'Gunting Kanak-kanak', desc:'Khas untuk pelanggan bawah 12 tahun', price:20, mins:20},
+    {id:'treat', name:'Rawatan Kepala & Rambut', desc:'Urutan kepala + rawatan minyak panas', price:40, mins:35}
+  ];
+
+  var BARBERS = [
+    {id:'any', name:'Mana-mana Barber', desc:'Kami padankan dengan barber tersedia terdekat', tag:'Paling Pantas', rating:null, years:null},
+    {id:'amir', name:'Amir Hakim', desc:'Pakar fade & gaya moden', tag:'Paling Popular', rating:4.9, years:7},
+    {id:'faizal', name:'Faizal Rashid', desc:'Pakar cukur lurus & janggut klasik', tag:'Senior', rating:4.8, years:10},
+    {id:'danish', name:'Danish Iqbal', desc:'Gaya urban & reka bentuk rambut', tag:'Kreatif', rating:4.7, years:4}
+  ];
+
+  var ALL_TIMES = ['10:00','10:45','11:30','12:15','13:00','14:00','14:45','15:30','16:15','17:00','17:45','18:30','19:15','20:00'];
+  var DOW = ['Ahd','Isn','Sel','Rab','Kha','Jum','Sab'];
+  var MONTHS = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogo','Sep','Okt','Nov','Dis'];
+
+  function buildDates(n){
+    var out=[]; var today=new Date();
+    for(var i=0;i<n;i++){ var d=new Date(today); d.setDate(today.getDate()+i); out.push(d); }
+    return out;
+  }
+  var DATES = buildDates(10);
+
+  function seededUnavailable(dateIdx){
+    var out={};
+    ALL_TIMES.forEach(function(t,i){ if ((dateIdx*5 + i*7) % 11 === 0) out[t]=true; });
+    return out;
+  }
+
+  var LIVE_SVG =
+    '<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">' +
+      '<rect width="64" height="64" fill="var(--raised)"/>' +
+      '<circle cx="28" cy="24" r="11" fill="var(--surface-2)" stroke="var(--border)" stroke-width="1.5"/>' +
+      '<path d="M10 58c2-11 9-18 18-18s16 7 18 18" fill="var(--surface-2)" stroke="var(--border)" stroke-width="1.5"/>' +
+      '<g class="clipper"><rect x="37" y="20" width="18" height="7" rx="2" fill="var(--accent)"/><rect x="53" y="21.5" width="6" height="4" rx="1" fill="var(--accent-soft)"/></g>' +
+      '<circle class="bit b1" cx="48" cy="14" r="1.4" fill="var(--fg)"/>' +
+      '<circle class="bit b2" cx="52" cy="17" r="1.1" fill="var(--fg)"/>' +
+      '<circle class="bit b3" cx="45" cy="18" r="1.2" fill="var(--fg)"/>' +
+    '</svg>';
+
+  var state = {
+    tab:'home', prevTab:'home', step:1,
+    selectedServices:{}, selectedBarber:null, selectedDateIdx:0, selectedTime:null,
+    name:'', phone:'', bookings:[], justBooked:null, unread:false, dbOk:false
+  };
+
+  var supa = null;
+  if(window.supabase && window.SUPABASE_URL && window.SUPABASE_URL.indexOf('YOUR-PROJECT-ID')===-1){
+    try{ supa = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY); }catch(e){ supa=null; }
+  }
+
+  function money(n){ return 'RM' + n.toFixed(0) + '.00'; }
+  function fmtMoney(n){ return 'RM' + n; }
+  function selectedServiceList(){ return SERVICES.filter(function(s){ return state.selectedServices[s.id]; }); }
+  function totalPrice(){ return selectedServiceList().reduce(function(sum,s){ return sum+s.price; }, 0); }
+  function totalMins(){ return selectedServiceList().reduce(function(sum,s){ return sum+s.mins; }, 0); }
+  function barberById(id){ for(var i=0;i<BARBERS.length;i++) if(BARBERS[i].id===id) return BARBERS[i]; return null; }
+  function fmtDate(d){ return d.getDate()+' '+MONTHS[d.getMonth()]; }
+  function fmtDateFull(d){ return DOW[d.getDay()]+', '+d.getDate()+' '+MONTHS[d.getMonth()]+' '+d.getFullYear(); }
+  function initials(str){ return str.split(' ').map(function(w){return w[0];}).slice(0,2).join('').toUpperCase(); }
+  function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+  var toastTimer=null;
+  function toast(msg){
+    var el=document.getElementById('toast');
+    el.innerHTML = ICON.spark + '<span>'+msg+'</span>';
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer=setTimeout(function(){ el.classList.remove('show'); }, 2200);
+  }
+
+  function mapRow(r){
+    return { _id:r.id, ref:r.ref, services:r.services||[], mins:r.mins, barberName:r.barber_name,
+      dateFull:r.date_full, time:r.time, total:r.total, customerName:r.customer_name, customerPhone:r.customer_phone };
+  }
+
+  function loadBookings(){
+    if(!supa) return;
+    supa.from('bookings').select('*').order('created_at',{ascending:false}).limit(50).then(function(res){
+      if(res.error){ console.warn(res.error); return; }
+      state.bookings = res.data.map(mapRow);
+      state.dbOk = true;
+      render();
+    });
+  }
+
+  function subscribeRealtime(){
+    if(!supa) return;
+    supa.channel('bookings-live')
+      .on('postgres_changes', {event:'INSERT', schema:'public', table:'bookings'}, function(payload){
+        var row = mapRow(payload.new);
+        if(state.bookings.some(function(b){ return b._id===row._id; })) return;
+        state.bookings.unshift(row);
+        if(state.tab!=='appointments'){ state.unread = true; }
+        toast('Tempahan baru diterima');
+        render();
+      })
+      .subscribe();
+  }
+
+  /* ---------------- Render: header ---------------- */
+  function renderTopbar(){
+    var el=document.getElementById('topbar');
+    if(state.tab==='home'){
+      el.innerHTML = '<div class="brandmark">'+ICON.scissors+'</div><div class="title-wrap"><span class="eyebrow">Selamat Kembali</span><h1>'+SHOP.name+'</h1></div><button class="iconbtn" id="btnShareTop" aria-label="Kongsi app">'+ICON.qr+'</button>';
+      return;
+    }
+    if(state.tab==='booking'){
+      var titles={1:'Pilih Khidmat',2:'Pilih Barber',3:'Tarikh & Masa',4:'Sahkan Tempahan'};
+      el.innerHTML = '<button class="back" id="btnBookBack">'+ICON.chevLeft+'</button><div class="title-wrap"><span class="eyebrow">Tempahan</span><h1>'+(state.justBooked?'Pengesahan':titles[state.step])+'</h1></div>';
+      return;
+    }
+    if(state.tab==='appointments'){
+      el.innerHTML = '<div class="brandmark">'+ICON.calendar+'</div><div class="title-wrap"><span class="eyebrow">Senarai</span><h1>Janji Temu Saya</h1></div>';
+      return;
+    }
+    if(state.tab==='profile'){
+      el.innerHTML = '<div class="brandmark">'+ICON.user+'</div><div class="title-wrap"><span class="eyebrow">Akaun</span><h1>Profil</h1></div>';
+      return;
+    }
+    if(state.tab==='share'){
+      el.innerHTML = '<button class="back" id="btnShareBack">'+ICON.chevLeft+'</button><div class="title-wrap"><span class="eyebrow">Mudahkan Pelanggan</span><h1>Kongsi App</h1></div>';
+      return;
+    }
+  }
+
+  function renderTabbar(){
+    document.querySelectorAll('.tabbtn').forEach(function(b){
+      b.classList.toggle('active', b.dataset.tab===state.tab);
+      var existingDot = b.querySelector('.tabdot');
+      if(b.dataset.tab==='appointments' && state.unread){
+        if(!existingDot){ var dot=document.createElement('span'); dot.className='tabdot'; b.appendChild(dot); }
+      } else if(existingDot){ existingDot.remove(); }
+    });
+  }
+
+  function screenHome(){
+    var html = '<div class="screen">';
+    html += '<div class="hero"><div class="hero-inner"><span class="hero-tag">'+ICON.spark+' Barbershop Mesra</span><h2>'+SHOP.tagline+'</h2><p class="sub">Tempah janji temu dalam masa kurang seminit. Pilih khidmat, barber kegemaran, dan masa yang sesuai untuk anda.</p><button class="btn btn-primary" id="heroBook">'+ICON.calendar+' Tempah Janji Temu</button><div class="hero-stats"><div class="hero-stat"><b>4.9</b><span>Penilaian</span></div><div class="hero-stat"><b>'+(3000+state.bookings.length)+'+</b><span>Tempahan</span></div><div class="hero-stat"><b>3</b><span>Barber Pakar</span></div></div></div></div>';
+    html += '<button class="live-card" id="liveCard"><div class="live-stage">'+LIVE_SVG+'<span class="live-badge"><i></i>LANGSUNG</span></div><div class="live-text"><span class="live-label">Di Kedai Sekarang</span><strong>Amir Hakim sedang menggunting</strong><span>Fade & taper · Kerusi 2</span></div></button>';
+    html += '<div style="display:flex;flex-direction:column;gap:11px;"><div class="info-row"><div class="ic">'+ICON.pin+'</div><div class="tx"><strong>Lokasi</strong><span>'+SHOP.address+'</span></div></div><div class="info-row"><div class="ic">'+ICON.clock+'</div><div class="tx"><strong>Waktu Operasi</strong><span>'+SHOP.hours+' · Ahad tutup</span></div></div><div class="info-row"><div class="ic">'+ICON.phone+'</div><div class="tx"><strong>Hubungi Kami</strong><span>'+SHOP.phone+'</span></div></div></div>';
+    html += '<div><div class="section-head"><h3>Khidmat Popular</h3><button class="link" id="seeAllSvc">Lihat Semua</button></div><div class="quickgrid" style="margin-top:10px;">' +
+      SERVICES.slice(0,3).map(function(s){ return '<div class="quickcard" data-svcquick="'+s.id+'"><div class="ic">'+ICON.scissors+'</div><span>'+s.name+'</span><span class="pricepill" style="margin-top:-2px;">'+money(s.price)+'</span></div>'; }).join('') +
+      '</div></div>';
+    html += '</div>';
+    return html;
+  }
+
+  function stepper(){
+    var labels=['Khidmat','Barber','Masa','Sah'];
+    var html='<div class="stepper">';
+    for(var i=1;i<=4;i++){
+      var cls = i<state.step ? 'done' : (i===state.step ? 'current' : '');
+      html += '<div class="step '+cls+'"><div class="bar"></div><span class="lbl">'+labels[i-1]+'</span></div>';
+    }
+    html+='</div>';
+    return html;
+  }
+
+  function screenBookingStep1(){
+    var html = '<div class="screen">' + stepper();
+    html += '<p style="font-size:12.5px;color:var(--muted);line-height:1.5;">Pilih satu atau lebih khidmat. Jumlah masa dan harga dikira automatik.</p><div style="display:flex;flex-direction:column;gap:11px;">';
+    SERVICES.forEach(function(s){
+      var sel = !!state.selectedServices[s.id];
+      html += '<button class="svc-card'+(sel?' selected':'')+'" data-svc="'+s.id+'"><div class="chk">'+ICON.check+'</div><div class="body"><strong>'+s.name+'</strong><p>'+s.desc+'</p><div class="meta"><span class="pricepill">'+money(s.price)+'</span><span class="timepill">'+s.mins+' min</span></div></div></button>';
+    });
+    html += '</div></div>';
+    return html;
+  }
+
+  function screenBookingStep2(){
+    var html = '<div class="screen">' + stepper() + '<div style="display:flex;flex-direction:column;gap:11px;">';
+    BARBERS.forEach(function(b){
+      var sel = state.selectedBarber===b.id;
+      html += '<button class="bb-card'+(sel?' selected':'')+'" data-barber="'+b.id+'"><div class="bb-avatar">'+(b.id==='any'?ICON.user:initials(b.name))+'</div><div class="bb-body"><div class="row1"><strong>'+b.name+'</strong><span class="bb-tag">'+b.tag+'</span></div><p>'+b.desc+'</p>'+(b.rating?'<div class="bb-foot"><span class="star">'+ICON.star+' '+b.rating+'</span><span>'+b.years+' tahun pengalaman</span></div>':'')+'</div><div class="bb-check">'+ICON.check+'</div></button>';
+    });
+    html += '</div></div>';
+    return html;
+  }
+
+  function screenBookingStep3(){
+    var html = '<div class="screen">' + stepper();
+    html += '<div><div class="section-head"><h3>Pilih Tarikh</h3></div><div class="datestrip" style="margin-top:10px;">';
+    DATES.forEach(function(d,i){
+      var sel = state.selectedDateIdx===i;
+      html += '<div class="datechip'+(sel?' selected':'')+'" data-dateidx="'+i+'"><span class="dow">'+DOW[d.getDay()]+'</span><span class="num">'+d.getDate()+'</span></div>';
+    });
+    html += '</div></div>';
+    html += '<div><div class="section-head"><h3>Pilih Masa</h3><span style="font-size:12px;color:var(--muted-2);">'+fmtDate(DATES[state.selectedDateIdx])+'</span></div><div class="timegrid" style="margin-top:10px;">';
+    var busy = seededUnavailable(state.selectedDateIdx);
+    ALL_TIMES.forEach(function(t){
+      var disabled = !!busy[t]; var sel = state.selectedTime===t;
+      html += '<button class="timechip'+(sel?' selected':'')+'" '+(disabled?'disabled':'')+' data-time="'+t+'">'+t+'</button>';
+    });
+    html += '</div></div></div>';
+    return html;
+  }
+
+  function screenBookingStep4(){
+    var svcs = selectedServiceList(); var barber = barberById(state.selectedBarber); var date = DATES[state.selectedDateIdx];
+    var html = '<div class="screen">' + stepper();
+    html += '<div class="summary-card"><div class="summary-row"><span class="k">Khidmat</span><span class="v">'+svcs.map(function(s){return s.name;}).join(', ')+'</span></div><div class="summary-row"><span class="k">Barber</span><span class="v">'+(barber?barber.name:'—')+'</span></div><div class="summary-row"><span class="k">Tarikh</span><span class="v">'+fmtDateFull(date)+'</span></div><div class="summary-row"><span class="k">Masa</span><span class="v">'+(state.selectedTime||'—')+' ('+totalMins()+' min)</span></div><div class="summary-divider"></div><div class="summary-total"><span class="k">Jumlah</span><span class="v">'+money(totalPrice())+'</span></div></div>';
+    html += '<div style="display:flex;flex-direction:column;gap:14px;"><div class="field"><label for="custName">Nama Penuh</label><input id="custName" type="text" placeholder="cth. Ahmad Zulkarnain" value="'+escapeHtml(state.name)+'"></div><div class="field"><label for="custPhone">Nombor Telefon</label><input id="custPhone" type="tel" placeholder="012-345 6789" value="'+escapeHtml(state.phone)+'"></div></div>';
+    html += '</div>';
+    return html;
+  }
+
+  function screenSuccess(){
+    var b = state.justBooked;
+    var html = '<div class="screen"><div class="success-wrap"><div class="success-ic">'+ICON.checkBig+'</div><h2>Tempahan Disahkan!</h2><p>Tempahan anda sudah masuk dalam senarai kedai. Sila tiba 5 minit awal.</p><div class="refcode">Rujukan: '+b.ref+'</div></div>';
+    html += '<div class="summary-card" style="margin-top:4px;"><div class="summary-row"><span class="k">Khidmat</span><span class="v">'+b.services.join(', ')+'</span></div><div class="summary-row"><span class="k">Barber</span><span class="v">'+b.barberName+'</span></div><div class="summary-row"><span class="k">Masa</span><span class="v">'+b.dateFull+', '+b.time+'</span></div><div class="summary-divider"></div><div class="summary-total"><span class="k">Jumlah</span><span class="v">'+fmtMoney(b.total)+'</span></div></div>';
+    html += '<button class="btn btn-ghost btn-block" id="btnNewBooking">'+ICON.plus+' Buat Tempahan Baru</button></div>';
+    return html;
+  }
+
+  function screenAppointments(){
+    if(state.bookings.length===0){
+      return '<div class="screen"><div class="empty"><div class="ic">'+ICON.calendar+'</div><h3>Belum Ada Janji Temu</h3><p>Tempahan yang anda buat akan dipaparkan di sini supaya mudah disemak bila-bila masa.</p><button class="btn btn-primary" id="emptyBook">'+ICON.calendar+' Tempah Sekarang</button></div></div>';
+    }
+    var html='<div class="screen">';
+    state.bookings.forEach(function(b){
+      html += '<div class="apt-card"><div class="apt-top"><span class="apt-ref">'+b.ref+'</span><span class="badge-ok">Disahkan</span></div><div class="apt-when"><span class="ic">'+ICON.calendar+'</span><div><strong>'+b.dateFull+'</strong><span>'+b.time+' · '+b.mins+' min</span></div></div><div class="apt-services">'+b.services.join(', ')+'</div><div class="apt-foot"><span class="with">dengan <strong style="color:var(--fg);">'+b.barberName+'</strong></span><b>'+fmtMoney(b.total)+'</b></div></div>';
+    });
+    html += '</div>';
+    return html;
+  }
+
+  function screenProfile(){
+    var html = '<div class="screen"><div class="profile-card"><div class="profile-avatar">GT</div><div><strong>Tetamu</strong><span>Ahli sejak 2026</span></div></div>';
+    html += '<div class="menu-list">' + menuItem('share',ICON.qr,'Kongsi App (Kod QR)') + menuItem('menu',ICON.history,'Sejarah Tempahan') + menuItem('menu',ICON.card,'Kaedah Pembayaran') + menuItem('menu',ICON.bell,'Notifikasi') + menuItem('menu',ICON.help,'Bantuan & Sokongan') + '</div>';
+    html += '<button class="btn btn-ghost btn-block" id="btnLogout">'+ICON.logout+' Log Keluar</button></div>';
+    return html;
+  }
+  function menuItem(kind,icon,label){ return '<div class="menu-item" data-menu="'+kind+'" data-label="'+label+'"><div class="ic">'+icon+'</div><span>'+label+'</span><div class="chev">'+ICON.chevRight+'</div></div>'; }
+
+  function screenShare(){
+    var html = '<div class="screen"><div class="qr-card"><div class="qr-box" id="qrBox"></div><div class="qr-caption"><strong>Imbas untuk buka '+SHOP.name+'</strong><span>Letak kod ini di kaunter supaya pelanggan boleh tempah terus dari telefon mereka</span></div></div>';
+    html += '<div class="link-row"><span id="shareUrlText">memuatkan pautan…</span><button class="copybtn" id="btnCopyLink">'+ICON.copy+'</button></div>';
+    html += '<div class="note-box">Pautan ini pautan sebenar website Warm Barber — sesiapa yang imbas boleh terus buka dan buat tempahan.</div>';
+    html += '<div style="display:flex;flex-direction:column;gap:11px;"><div class="info-row"><div class="ic">'+ICON.pin+'</div><div class="tx"><strong>'+SHOP.name+'</strong><span>'+SHOP.address+'</span></div></div><div class="info-row"><div class="ic">'+ICON.phone+'</div><div class="tx"><strong>Hubungi</strong><span>'+SHOP.phone+'</span></div></div></div></div>';
+    return html;
+  }
+
+  function renderQr(){
+    var box = document.getElementById('qrBox'); var txt = document.getElementById('shareUrlText');
+    if(!box) return;
+    var url = window.location.href;
+    if(txt) txt.textContent = url;
+    box.innerHTML = '';
+    if(window.QRCode){
+      try{ new QRCode(box, { text:url, width:160, height:160, colorDark:'#1a1510', colorLight:'#ffffff', correctLevel: QRCode.CorrectLevel.H }); }
+      catch(e){ box.innerHTML = '<span style="color:#1a1510;font-size:11px;text-align:center;padding:10px;">Kod QR tidak dapat dijana</span>'; }
+    } else {
+      box.innerHTML = '<span style="color:#1a1510;font-size:11px;text-align:center;padding:10px;">Kod QR tidak tersedia</span>';
+    }
+  }
+
+  function renderDock(){
+    var dock=document.getElementById('dock');
+    if(state.tab!=='booking' || state.justBooked){ dock.hidden=true; dock.innerHTML=''; return; }
+    dock.hidden=false;
+    var canNext = true; var label='Seterusnya'; var iconRight=ICON.chevRight;
+    if(state.step===1){ canNext = selectedServiceList().length>0; }
+    if(state.step===2){ canNext = !!state.selectedBarber; }
+    if(state.step===3){ canNext = !!state.selectedTime; }
+    if(state.step===4){ canNext = state.name.trim().length>1 && state.phone.trim().length>=8; label='Sahkan Tempahan'; iconRight=ICON.check; }
+    var html='';
+    if(state.step>1){ html += '<div class="dock-total"><span>Jumlah</span><b>'+money(totalPrice())+'</b></div>'; }
+    html += '<button class="btn btn-primary btn-block" id="btnNext" '+(canNext?'':'disabled')+'>'+label+' '+iconRight+'</button>';
+    dock.innerHTML = html;
+  }
+
+  function render(){
+    renderTopbar(); renderTabbar();
+    var main=document.getElementById('main');
+    if(state.tab==='home') main.innerHTML = screenHome();
+    else if(state.tab==='booking'){
+      if(state.justBooked) main.innerHTML = screenSuccess();
+      else if(state.step===1) main.innerHTML = screenBookingStep1();
+      else if(state.step===2) main.innerHTML = screenBookingStep2();
+      else if(state.step===3) main.innerHTML = screenBookingStep3();
+      else main.innerHTML = screenBookingStep4();
+    }
+    else if(state.tab==='appointments') main.innerHTML = screenAppointments();
+    else if(state.tab==='profile') main.innerHTML = screenProfile();
+    else if(state.tab==='share') main.innerHTML = screenShare();
+    main.scrollTop = 0;
+    renderDock(); bindScreenEvents();
+    if(state.tab==='share') renderQr();
+  }
+
+  function goTab(tab){
+    state.prevTab = state.tab==='share' ? state.prevTab : state.tab;
+    state.tab=tab;
+    if(tab==='appointments'){ state.unread=false; }
+    render();
+  }
+  function goShare(){ state.prevTab = state.tab; state.tab='share'; render(); }
+  function startBooking(){ state.tab='booking'; state.step=1; state.justBooked=null; render(); }
+
+  function nextStep(){
+    if(state.step<4){ state.step++; render(); return; }
+    var svcs = selectedServiceList(); var barber = barberById(state.selectedBarber); var date = DATES[state.selectedDateIdx];
+    var ref = 'WB-' + Math.floor(1000+Math.random()*9000);
+    var booking = { ref:ref, services: svcs.map(function(s){return s.name;}), mins: totalMins(), barberName: barber.name, dateFull: fmtDateFull(date), time: state.selectedTime, total: totalPrice(), customerName: state.name, customerPhone: state.phone };
+    state.justBooked = booking;
+
+    if(supa){
+      supa.from('bookings').insert({
+        ref: booking.ref, services: booking.services, mins: booking.mins, barber_name: booking.barberName,
+        date_full: booking.dateFull, time: booking.time, total: booking.total,
+        customer_name: booking.customerName, customer_phone: booking.customerPhone
+      }).then(function(res){
+        if(res.error){ toast('Gagal simpan ke pangkalan data'); console.warn(res.error); }
+      });
+    } else {
+      booking._id = 'local-'+Date.now();
+      state.bookings.unshift(booking);
+    }
+    toast('Tempahan berjaya disahkan');
+    render();
+  }
+
+  function prevStep(){ if(state.step>1){ state.step--; render(); } else { state.tab='home'; render(); } }
+  function resetBooking(){
+    state.selectedServices={}; state.selectedBarber=null; state.selectedDateIdx=0; state.selectedTime=null;
+    state.name=''; state.phone=''; state.justBooked=null; state.step=1; state.tab='home'; render();
+  }
+
+  function bindScreenEvents(){
+    var main=document.getElementById('main');
+    var heroBook=document.getElementById('heroBook'); if(heroBook) heroBook.addEventListener('click', startBooking);
+    var emptyBook=document.getElementById('emptyBook'); if(emptyBook) emptyBook.addEventListener('click', startBooking);
+    var seeAll=document.getElementById('seeAllSvc'); if(seeAll) seeAll.addEventListener('click', startBooking);
+    var liveCard=document.getElementById('liveCard'); if(liveCard) liveCard.addEventListener('click', function(){ toast('Amir sedang sibuk — cuba tempah slot seterusnya'); });
+    var btnShareTop=document.getElementById('btnShareTop'); if(btnShareTop) btnShareTop.addEventListener('click', goShare);
+
+    main.querySelectorAll('[data-svcquick]').forEach(function(el){ el.addEventListener('click', function(){ startBooking(); state.selectedServices[el.dataset.svcquick]=true; render(); }); });
+    main.querySelectorAll('[data-svc]').forEach(function(el){ el.addEventListener('click', function(){ var id=el.dataset.svc; state.selectedServices[id]=!state.selectedServices[id]; render(); }); });
+    main.querySelectorAll('[data-barber]').forEach(function(el){ el.addEventListener('click', function(){ state.selectedBarber = el.dataset.barber; render(); }); });
+    main.querySelectorAll('[data-dateidx]').forEach(function(el){ el.addEventListener('click', function(){ state.selectedDateIdx = parseInt(el.dataset.dateidx,10); state.selectedTime=null; render(); }); });
+    main.querySelectorAll('[data-time]').forEach(function(el){ el.addEventListener('click', function(){ if(el.hasAttribute('disabled')) return; state.selectedTime = el.dataset.time; render(); }); });
+
+    var nameInput=document.getElementById('custName'); if(nameInput) nameInput.addEventListener('input', function(){ state.name=nameInput.value; renderDock(); });
+    var phoneInput=document.getElementById('custPhone'); if(phoneInput) phoneInput.addEventListener('input', function(){ state.phone=phoneInput.value; renderDock(); });
+
+    var btnNewBooking=document.getElementById('btnNewBooking'); if(btnNewBooking) btnNewBooking.addEventListener('click', resetBooking);
+    main.querySelectorAll('[data-menu]').forEach(function(el){ el.addEventListener('click', function(){ if(el.dataset.menu==='share'){ goShare(); return; } toast('Ciri "'+el.dataset.label+'" akan datang'); }); });
+    var btnLogout=document.getElementById('btnLogout'); if(btnLogout) btnLogout.addEventListener('click', function(){ toast('Log keluar akan datang'); });
+    var btnBookBack=document.getElementById('btnBookBack'); if(btnBookBack) btnBookBack.addEventListener('click', prevStep);
+    var btnShareBack=document.getElementById('btnShareBack'); if(btnShareBack) btnShareBack.addEventListener('click', function(){ state.tab=state.prevTab||'home'; render(); });
+
+    var btnCopyLink=document.getElementById('btnCopyLink');
+    if(btnCopyLink) btnCopyLink.addEventListener('click', function(){
+      var url=window.location.href;
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(url).then(function(){ toast('Pautan disalin'); }).catch(function(){ toast('Tidak dapat salin'); });
+      } else { toast('Tidak dapat salin — sila salin secara manual'); }
+    });
+
+    var btnNext=document.getElementById('btnNext'); if(btnNext) btnNext.addEventListener('click', nextStep);
+  }
+
+  document.querySelectorAll('.tabbtn').forEach(function(b){
+    b.addEventListener('click', function(){ if(b.dataset.tab==='booking'){ startBooking(); return; } goTab(b.dataset.tab); });
+  });
+
+  render();
+  if(supa){ loadBookings(); subscribeRealtime(); }
+})();
+</script>
+</body>
+</html>
