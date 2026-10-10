@@ -20,18 +20,27 @@ create table if not exists bookings (
   total int not null,
   customer_name text,
   customer_phone text,
+  scheduled_at timestamptz,
+  cancelled boolean not null default false,
   created_at timestamptz not null default now()
 );
 
 alter table bookings enable row level security;
+alter table bookings add column if not exists scheduled_at timestamptz;
+alter table bookings add column if not exists cancelled boolean not null default false;
 
 -- Elak dua tempahan untuk barber + tarikh + masa yang sama (double-booking).
 -- Barber lain masih boleh ditempah pada masa yang sama -- hanya slot
--- barber yang SAMA pada masa yang SAMA yang disekat.
+-- barber yang SAMA pada masa yang SAMA yang disekat. Guna unique index
+-- SEPARUH (partial) supaya slot yang DIBATALKAN terbuka semula untuk
+-- ditempah orang lain.
 alter table bookings
   drop constraint if exists bookings_date_time_unique;
 alter table bookings
-  add constraint bookings_barber_date_time_unique unique (barber_name, date_full, time);
+  drop constraint if exists bookings_barber_date_time_unique;
+create unique index if not exists bookings_barber_date_time_active_unique
+  on bookings (barber_name, date_full, time)
+  where (cancelled = false);
 
 -- Benarkan sesiapa sahaja (pelanggan) buat tempahan baru.
 create policy "Public can insert bookings"
@@ -50,9 +59,10 @@ create policy "Public can read bookings"
   using (false);
 
 -- View tanpa data peribadi -- selamat untuk app semak slot mana yang
--- sudah penuh (untuk papar butang masa yang "disabled").
+-- sudah penuh (untuk papar butang masa yang "disabled"). Tempahan yang
+-- sudah DIBATALKAN tidak dikira -- slot tu terbuka semula.
 create or replace view public_booked_slots as
-  select date_full, time, barber_name from bookings;
+  select date_full, time, barber_name from bookings where cancelled = false;
 grant select on public_booked_slots to anon;
 
 -- Fungsi untuk seorang pelanggan tengok SENARAI TEMPAHAN DIA SENDIRI
@@ -110,3 +120,36 @@ begin
 end;
 $$;
 grant execute on function set_shop_status(boolean, text, text) to anon;
+
+-- ====================================================================
+-- BATAL TEMPAHAN SENDIRI (pelanggan) -- hanya dibenarkan kalau masih
+-- 30 minit ATAU LEBIH sebelum masa tempahan. Guna "soft cancel"
+-- (tanda cancelled=true) bukan padam terus, supaya rekod kekal untuk
+-- rujukan pemilik kedai.
+-- ====================================================================
+create or replace function cancel_my_booking(p_booking_id uuid, p_phone text)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_sched timestamptz;
+  v_cancelled boolean;
+begin
+  select scheduled_at, cancelled into v_sched, v_cancelled from bookings
+    where id = p_booking_id and customer_phone = p_phone;
+  if v_sched is null or v_cancelled is null then
+    return false;
+  end if;
+  if v_cancelled then
+    return false;
+  end if;
+  if now() > (v_sched - interval '30 minutes') then
+    return false;
+  end if;
+  update bookings set cancelled = true where id = p_booking_id and customer_phone = p_phone;
+  return true;
+end;
+$$;
+grant execute on function cancel_my_booking(uuid, text) to anon;

@@ -168,7 +168,14 @@
   .timegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;}
   .timechip{font-family:var(--font-mono);font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;background:var(--surface-2);border:1px solid var(--border-soft);border-radius:11px;padding:11px 4px;text-align:center;color:var(--fg);cursor:pointer;}
   .timechip.selected{background:var(--accent);border-color:var(--accent);color:var(--accent-fg);}
-  .timechip[disabled]{opacity:.32;cursor:not-allowed;text-decoration:line-through;}
+  .timechip[disabled]{cursor:not-allowed;}
+  .timechip.full{background:var(--live-soft);border:1.5px solid var(--live);color:var(--muted);text-decoration:line-through;opacity:.85;}
+  .timechip .full-tag{display:block;font-size:8.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--live);margin-top:2px;text-decoration:none;}
+  .time-legend{display:flex;align-items:center;gap:14px;font-size:11px;color:var(--muted-2);padding:0 2px 4px;}
+  .time-legend .dot{display:inline-flex;align-items:center;gap:5px;}
+  .time-legend .sw{width:10px;height:10px;border-radius:3px;display:inline-block;}
+  .time-legend .sw.ok{background:var(--surface-2);border:1px solid var(--border-soft);}
+  .time-legend .sw.full{background:var(--live-soft);border:1.5px solid var(--live);}
 
   .field{display:flex;flex-direction:column;gap:7px;}
   .field label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
@@ -337,6 +344,7 @@
   var ALL_TIMES = ['10:00','10:45','11:30','12:15','13:00','14:00','14:45','15:30','16:15','17:00','17:45','18:30','19:15','20:00'];
   var DOW = ['Ahd','Isn','Sel','Rab','Kha','Jum','Sab'];
   var MONTHS = ['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogo','Sep','Okt','Nov','Dis'];
+  var REAL_BARBER_NAMES = BARBERS.filter(function(b){ return b.id!=='any'; }).map(function(b){ return b.name; });
 
   function buildDates(n){
     var out=[]; var today=new Date();
@@ -353,17 +361,46 @@
 
   function ensureBusyTimes(){
     var barber=barberById(state.selectedBarber);
-    if(!supa || !barber || barber.id==='any') return;
+    if(!supa || !barber) return;
     var key = busyKey();
     if(state.busyTimes[key]) return;
     state.busyTimes[key] = 'loading';
-    supa.from('public_booked_slots').select('time').eq('barber_name', barber.name).eq('date_full', fmtDateFull(DATES[state.selectedDateIdx]))
+    var dateFull = fmtDateFull(DATES[state.selectedDateIdx]);
+    if(barber.id==='any'){
+      supa.from('public_booked_slots').select('time,barber_name').eq('date_full', dateFull)
+        .then(function(res){
+          var byTime = {};
+          if(!res.error){
+            res.data.forEach(function(r){
+              if(!byTime[r.time]) byTime[r.time]={};
+              byTime[r.time][r.barber_name]=true;
+            });
+          }
+          var busy={};
+          ALL_TIMES.forEach(function(t){
+            var taken = byTime[t] || {};
+            var count = REAL_BARBER_NAMES.filter(function(n){ return taken[n]; }).length;
+            busy[t] = count >= REAL_BARBER_NAMES.length;
+          });
+          state.busyTimes[key]=busy;
+          if(state.tab==='booking' && state.step===3) render();
+        });
+      return;
+    }
+    supa.from('public_booked_slots').select('time').eq('barber_name', barber.name).eq('date_full', dateFull)
       .then(function(res){
         var busy={};
         if(!res.error){ res.data.forEach(function(r){ busy[r.time]=true; }); }
         state.busyTimes[key]=busy;
         if(state.tab==='booking' && state.step===3) render();
       });
+  }
+
+  function invalidateBusyForDate(dateFull){
+    Object.keys(state.busyTimes).forEach(function(k){
+      var parts = k.split('|');
+      if(parts[1]===dateFull){ delete state.busyTimes[k]; }
+    });
   }
 
   var LIVE_SVG =
@@ -442,7 +479,30 @@
 
   function mapRow(r){
     return { _id:r.id, ref:r.ref, services:r.services||[], mins:r.mins, barberName:r.barber_name,
-      dateFull:r.date_full, time:r.time, total:r.total, customerName:r.customer_name, customerPhone:r.customer_phone };
+      dateFull:r.date_full, time:r.time, total:r.total, customerName:r.customer_name, customerPhone:r.customer_phone,
+      scheduledAt:r.scheduled_at, cancelled:!!r.cancelled };
+  }
+
+  function isCancellable(b){
+    if(!b || !b.scheduledAt) return false;
+    if(typeof b._id==='string' && b._id.indexOf('local-')===0) return false;
+    var diff = new Date(b.scheduledAt).getTime() - Date.now();
+    return diff > 30*60*1000;
+  }
+
+  function cancelBooking(id){
+    if(!supa || !state.customer) return;
+    var found = state.bookings.find(function(b){ return b._id===id; });
+    if(!found) return;
+    if(!window.confirm('Pasti nak batalkan tempahan '+found.ref+'?')) return;
+    supa.rpc('cancel_my_booking', { p_booking_id: id, p_phone: state.customer.phone }).then(function(res){
+      if(res.error){ toast('Gagal batalkan, cuba lagi'); console.warn(res.error); return; }
+      if(res.data === false){ toast('Tidak boleh batal — kurang 30 minit sebelum masa tempahan'); return; }
+      state.bookings = state.bookings.filter(function(b){ return b._id!==id; });
+      toast('Tempahan dibatalkan');
+      broadcastSlotFreed(found);
+      render();
+    });
   }
 
   function loadBookings(){
@@ -483,15 +543,16 @@
   function subscribeSlotUpdates(){
     if(!supa) return;
     supa.channel('slot-updates')
-      .on('broadcast', {event:'booked'}, function(msg){
-        var p = msg.payload || {};
-        if(!p.barberName || !p.dateFull || !p.time) return;
-        var key = p.barberName+'|'+p.dateFull;
-        var cached = state.busyTimes[key];
-        if(cached && cached!=='loading'){ cached[p.time] = true; }
-        if(state.tab==='booking' && state.step===3) render();
-      })
+      .on('broadcast', {event:'booked'}, function(msg){ handleSlotUpdate(msg.payload); })
+      .on('broadcast', {event:'freed'}, function(msg){ handleSlotUpdate(msg.payload); })
       .subscribe();
+  }
+
+  function handleSlotUpdate(p){
+    p = p || {};
+    if(!p.dateFull) return;
+    invalidateBusyForDate(p.dateFull);
+    if(state.tab==='booking' && state.step===3){ ensureBusyTimes(); render(); }
   }
 
   function broadcastSlotBooked(booking){
@@ -499,6 +560,16 @@
     try{
       supa.channel('slot-updates').send({
         type:'broadcast', event:'booked',
+        payload:{ barberName:booking.barberName, dateFull:booking.dateFull, time:booking.time }
+      });
+    }catch(e){}
+  }
+
+  function broadcastSlotFreed(booking){
+    if(!supa) return;
+    try{
+      supa.channel('slot-updates').send({
+        type:'broadcast', event:'freed',
         payload:{ barberName:booking.barberName, dateFull:booking.dateFull, time:booking.time }
       });
     }catch(e){}
@@ -619,7 +690,7 @@
     html += '<div><div class="section-head"><h3>Pilih Masa</h3><span style="font-size:12px;color:var(--muted-2);">'+fmtDate(DATES[state.selectedDateIdx])+'</span></div>';
     ensureBusyTimes();
     var barber = barberById(state.selectedBarber);
-    var unlimited = !supa || !barber || barber.id==='any';
+    var unlimited = !supa || !barber;
     var key = busyKey();
     var cached = state.busyTimes[key];
     var loading = !unlimited && cached==='loading';
@@ -627,10 +698,11 @@
     if(loading){
       html += '<p style="font-size:12.5px;color:var(--muted-2);padding:14px 0;">Menyemak slot tersedia…</p>';
     } else {
-      html += '<div class="timegrid" style="margin-top:10px;">';
+      html += '<div class="time-legend"><span class="dot"><span class="sw ok"></span>Kosong</span><span class="dot"><span class="sw full"></span>Dah ditempah</span></div>';
+      html += '<div class="timegrid" style="margin-top:4px;">';
       ALL_TIMES.forEach(function(t){
         var disabled = !!busy[t]; var sel = state.selectedTime===t;
-        html += '<button class="timechip'+(sel?' selected':'')+'" '+(disabled?'disabled':'')+' data-time="'+t+'">'+t+'</button>';
+        html += '<button class="timechip'+(sel?' selected':'')+(disabled?' full':'')+'" '+(disabled?'disabled':'')+' data-time="'+t+'">'+t+(disabled?'<span class="full-tag">Penuh</span>':'')+'</button>';
       });
       html += '</div>';
     }
@@ -661,7 +733,17 @@
     }
     var html='<div class="screen">';
     state.bookings.forEach(function(b){
-      html += '<div class="apt-card"><div class="apt-top"><span class="apt-ref">'+b.ref+'</span><span class="badge-ok">Disahkan</span></div><div class="apt-when"><span class="ic">'+ICON.calendar+'</span><div><strong>'+b.dateFull+'</strong><span>'+b.time+' · '+b.mins+' min</span></div></div><div class="apt-services">'+b.services.join(', ')+'</div><div class="apt-foot"><span class="with">dengan <strong style="color:var(--fg);">'+b.barberName+'</strong></span><b>'+fmtMoney(b.total)+'</b></div></div>';
+      var cancellable = isCancellable(b);
+      var pastOrSoon = b.scheduledAt ? (new Date(b.scheduledAt).getTime() - Date.now()) : null;
+      var cancelHtml = '';
+      if(!cancellable){
+        if(pastOrSoon !== null && pastOrSoon > 0){
+          cancelHtml = '<p style="font-size:11px;color:var(--muted-2);margin-top:8px;">Tak boleh batal — kurang 30 minit sebelum masa tempahan</p>';
+        }
+      } else {
+        cancelHtml = '<button class="btn btn-ghost btn-block" style="margin-top:9px;color:var(--live);border-color:var(--live);" data-cancel="'+b._id+'">Batal Tempahan</button>';
+      }
+      html += '<div class="apt-card"><div class="apt-top"><span class="apt-ref">'+b.ref+'</span><span class="badge-ok">Disahkan</span></div><div class="apt-when"><span class="ic">'+ICON.calendar+'</span><div><strong>'+b.dateFull+'</strong><span>'+b.time+' · '+b.mins+' min</span></div></div><div class="apt-services">'+b.services.join(', ')+'</div><div class="apt-foot"><span class="with">dengan <strong style="color:var(--fg);">'+b.barberName+'</strong></span><b>'+fmtMoney(b.total)+'</b></div>'+cancelHtml+'</div>';
     });
     html += '</div>';
     return html;
@@ -807,7 +889,10 @@
     if(!state.shopOpen){ toast('Kedai sedang tutup sementara — sila cuba lagi kemudian'); return; }
     var svcs = selectedServiceList(); var barber = barberById(state.selectedBarber); var date = DATES[state.selectedDateIdx];
     var ref = 'WB-' + Math.floor(1000+Math.random()*9000);
-    var booking = { ref:ref, services: svcs.map(function(s){return s.name;}), mins: totalMins(), barberName: barber.name, dateFull: fmtDateFull(date), time: state.selectedTime, total: totalPrice(), customerName: state.name, customerPhone: state.phone };
+    var timeParts = (state.selectedTime||'00:00').split(':');
+    var scheduled = new Date(date);
+    scheduled.setHours(parseInt(timeParts[0],10)||0, parseInt(timeParts[1],10)||0, 0, 0);
+    var booking = { ref:ref, services: svcs.map(function(s){return s.name;}), mins: totalMins(), barberName: barber.name, dateFull: fmtDateFull(date), time: state.selectedTime, total: totalPrice(), customerName: state.name, customerPhone: state.phone, scheduledAt: scheduled.toISOString() };
 
     if(!supa){
       booking._id = 'local-'+Date.now();
@@ -823,13 +908,14 @@
     supa.from('bookings').insert({
       ref: booking.ref, services: booking.services, mins: booking.mins, barber_name: booking.barberName,
       date_full: booking.dateFull, time: booking.time, total: booking.total,
-      customer_name: booking.customerName, customer_phone: booking.customerPhone
+      customer_name: booking.customerName, customer_phone: booking.customerPhone,
+      scheduled_at: booking.scheduledAt
     }).then(function(res){
       state.submitting = false;
       if(res.error){
         if(res.error.code === '23505'){
           toast('Slot ni baru sahaja diambil orang lain — sila pilih masa lain');
-          delete state.busyTimes[booking.barberName+'|'+booking.dateFull];
+          invalidateBusyForDate(booking.dateFull);
           state.selectedTime = null;
           state.step = 3;
         } else {
@@ -912,6 +998,7 @@
     });
 
     var btnNext=document.getElementById('btnNext'); if(btnNext) btnNext.addEventListener('click', nextStep);
+    main.querySelectorAll('[data-cancel]').forEach(function(el){ el.addEventListener('click', function(){ cancelBooking(el.dataset.cancel); }); });
   }
 
   document.querySelectorAll('.tabbtn').forEach(function(b){

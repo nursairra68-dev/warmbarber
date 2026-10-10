@@ -121,6 +121,31 @@ Bila kedai ditutup:
 Nak buka balik, masuk semula skrin yang sama, masukkan PIN, tekan
 **"Buka Kedai Semula"**.
 
+## 12. Slot yang sudah ditempah ditanda dengan jelas
+
+Dalam skrin "Pilih Masa", slot yang sudah ada orang tempah sekarang
+ditanda dengan warna merah pudar, garis potong pada nombor masa, dan
+label kecil **"PENUH"** di bawahnya -- jauh lebih jelas berbanding
+sebelum ni. Ada juga legend kecil di atas grid ("Kosong" vs "Dah
+ditempah") untuk tunjuk maksud warna tu.
+
+Kalau pelanggan pilih **"Mana-mana Barber"**, slot hanya ditanda PENUH
+bila SEMUA barber sudah ada tempahan pada masa tu -- kalau mana-mana
+satu barber masih kosong, slot tu masih boleh ditempah.
+
+## 13. Pelanggan boleh batalkan tempahan sendiri
+
+Dalam tab **Janji Temu Saya**, setiap tempahan ada butang **"Batal
+Tempahan"** -- tapi hanya muncul kalau masih **30 minit atau lebih**
+sebelum masa tempahan tu. Kalau dah kurang 30 minit, butang tu
+disembunyikan dan digantikan dengan nota "Tak boleh batal -- kurang 30
+minit sebelum masa tempahan".
+
+Bila dibatalkan, slot tu terbuka semula serta-merta (secara live) untuk
+pelanggan lain tempah -- sama macam ciri slot-locking di #9. Rekod
+tempahan asal tidak dipadam terus dari pangkalan data (hanya ditanda
+"dibatalkan") supaya pemilik kedai masih ada rujukan kalau perlu.
+
 ## Apa yang dah berfungsi penuh sekarang
 
 - Tempahan pelanggan SIMPAN betul-betul dalam pangkalan data (Supabase),
@@ -138,6 +163,10 @@ Nak buka balik, masuk semula skrin yang sama, masukkan PIN, tekan
 - Lokasi kedai boleh ditekan terus untuk buka Google Maps
 - Pemilik boleh tutup/buka kedai (rehat, cuti) pada bila-bila masa
   dari dalam app sendiri, dengan PIN
+- Slot yang sudah ditempah ditanda dengan jelas (warna, garis potong,
+  label "PENUH") pada skrin pilih masa
+- Pelanggan boleh batalkan tempahan sendiri, selagi masih 30 minit
+  atau lebih sebelum masa tempahan
 
 ## Nak domain sendiri (cth. warmbarber.com) kemudian?
 
