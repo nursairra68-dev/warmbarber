@@ -400,6 +400,7 @@
             busy[t] = count >= REAL_BARBER_NAMES.length;
           });
           state.busyTimes[key]=busy;
+          state.busyBarbersAtTime[key]=byTime;
           if(state.tab==='booking' && state.step===3) render();
         });
       return;
@@ -418,6 +419,20 @@
       var parts = k.split('|');
       if(parts[1]===dateFull){ delete state.busyTimes[k]; }
     });
+    Object.keys(state.busyBarbersAtTime).forEach(function(k){
+      var parts = k.split('|');
+      if(parts[1]===dateFull){ delete state.busyBarbersAtTime[k]; }
+    });
+  }
+
+  function pickAssignedBarberName(barber, time){
+    if(barber.id!=='any') return barber.name;
+    var key = busyKey();
+    var byTime = state.busyBarbersAtTime[key] || {};
+    var taken = byTime[time] || {};
+    var free = REAL_BARBER_NAMES.filter(function(n){ return !taken[n]; });
+    if(free.length) return free[Math.floor(Math.random()*free.length)];
+    return REAL_BARBER_NAMES[0];
   }
 
   var LIVE_SVG =
@@ -435,7 +450,7 @@
     tab:'home', prevTab:'home', step:1,
     selectedServices:{}, selectedBarber:null, selectedDateIdx:0, selectedTime:null,
     name:'', phone:'', bookings:[], justBooked:null, unread:false, dbOk:false,
-    customer:null, regName:'', regPhone:'', busyTimes:{}, submitting:false,
+    customer:null, regName:'', regPhone:'', busyTimes:{}, busyBarbersAtTime:{}, submitting:false,
     shopOpen:true, shopNote:''
   };
 
@@ -889,7 +904,8 @@
     var timeParts = (state.selectedTime||'00:00').split(':');
     var scheduled = new Date(date);
     scheduled.setHours(parseInt(timeParts[0],10)||0, parseInt(timeParts[1],10)||0, 0, 0);
-    var booking = { ref:ref, services: svcs.map(function(s){return s.name;}), mins: totalMins(), barberName: barber.name, dateFull: fmtDateFull(date), time: state.selectedTime, total: totalPrice(), customerName: state.name, customerPhone: state.phone, scheduledAt: scheduled.toISOString() };
+    var assignedBarberName = pickAssignedBarberName(barber, state.selectedTime);
+    var booking = { ref:ref, services: svcs.map(function(s){return s.name;}), mins: totalMins(), barberName: assignedBarberName, dateFull: fmtDateFull(date), time: state.selectedTime, total: totalPrice(), customerName: state.name, customerPhone: state.phone, scheduledAt: scheduled.toISOString() };
 
     if(!supa){
       booking._id = 'local-'+Date.now();
