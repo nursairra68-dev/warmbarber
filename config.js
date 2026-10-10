@@ -7,5 +7,5 @@
 // untuk dedah di sisi klien) -- akses sebenar dikawal oleh "Row Level
 // Security" yang awak setkan dalam Supabase (lihat README.md).
 // ====================================================================
-window.SUPABASE_URL = "https://YOUR-PROJECT-ID.supabase.co";
-window.SUPABASE_ANON_KEY = "YOUR-ANON-PUBLIC-KEY";
+window.SUPABASE_URL = "https://ecfzomxgrcowtzhpzlqi.supabase.co";
+window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVjZnpvbXhncmNvd3R6aHB6bHFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE2MzYwODAsImV4cCI6MjEwNzIxMjA4MH0.pvdlW6XZ8Hj2jGZ_GvnzDbbRSSi57Oj9e1BOVxgAn3Y";
